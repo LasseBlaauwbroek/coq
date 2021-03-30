@@ -132,4 +132,4 @@ let solve_constraints =
   tclENV >>= fun env -> tclEVARMAP >>= fun sigma ->
    try let sigma = Evarconv.solve_unif_constraints_with_heuristics env sigma in
        Unsafe.tclEVARSADVANCE sigma
-   with e -> tclZERO e
+   with e when CErrors.noncritical e -> tclZERO e
