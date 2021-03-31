@@ -10,6 +10,9 @@
 
 (** Global control of Coq. *)
 
+(** Used to convert signals to exceptions *)
+exception Timeout
+
 (** Will periodically call [Thread.delay] if set to true *)
 val enable_thread_delay : bool ref
 
