@@ -478,6 +478,11 @@ let revtoptac n0 gl =
   let f = EConstr.it_mkLambda_or_LetIn (mkEtaApp (EConstr.mkRel (n + 1)) (-n) 1) dc' in
   Refiner.refiner ~check:true EConstr.Unsafe.(to_constr (EConstr.mkApp (f, [|Evarutil.mk_new_meta ()|]))) gl
 
+let nothing_to_inject =
+  CWarnings.create ~name:"spurious-ssr-injection" ~category:"ssr"
+    (fun msg ->
+       Pp.(str msg))
+
 let equality_inj l b id c gl =
   let msg = ref "" in
   try Proofview.V82.of_tactic (Equality.inj None l b None c) gl
@@ -487,7 +492,7 @@ let equality_inj l b id c gl =
   when msg := Pp.string_of_ppcmds s;
        !msg = "Not a projectable equality but a discriminable one." ||
        !msg = "Nothing to inject." ->
-    Feedback.msg_warning (Pp.str !msg);
+    nothing_to_inject !msg;
     discharge_hyp (id, (id, "")) gl
 
 let injectidl2rtac id c gl =
