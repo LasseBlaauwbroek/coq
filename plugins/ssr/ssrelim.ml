@@ -485,6 +485,11 @@ let revtoptac n0 =
   Refiner.refiner ~check:true EConstr.Unsafe.(to_constr (EConstr.mkApp (f, [|Evarutil.mk_new_meta ()|])))
   end
 
+let nothing_to_inject =
+  CWarnings.create ~name:"spurious-ssr-injection" ~category:"ssr"
+    (fun msg ->
+       Pp.(str msg))
+
 let equality_inj l b id c =
   Proofview.V82.tactic begin fun gl ->
   let msg = ref "" in
@@ -495,7 +500,7 @@ let equality_inj l b id c =
   when msg := Pp.string_of_ppcmds s;
        !msg = "Not a projectable equality but a discriminable one." ||
        !msg = "Nothing to inject." ->
-    Feedback.msg_warning (Pp.str !msg);
+    nothing_to_inject !msg;
     discharge_hyp (id, (id, "")) gl
   end
 
