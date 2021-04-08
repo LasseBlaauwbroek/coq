@@ -58,33 +58,29 @@ let rec find_and_remove_assoc (i : int) = function
     else (r, (j, v) :: ans)
 
 let iraise e =
-  let () = Mutex.lock lock in
-  let id = Thread.id (Thread.self ()) in
-  let () = current := (id, e) :: remove_assoc id !current in
-  let () = Mutex.unlock lock in
+  CThread.with_lock lock ~scope:(fun () ->
+      let id = Thread.id (Thread.self ()) in
+      current := (id, e) :: remove_assoc id !current);
   raise (fst e)
 
 let raise ?info e = match info with
-| None ->
-  let () = Mutex.lock lock in
-  let id = Thread.id (Thread.self ()) in
-  let () = current := remove_assoc id !current in
-  let () = Mutex.unlock lock in
+  | None ->
+  CThread.with_lock lock ~scope:(fun () ->
+      let id = Thread.id (Thread.self ()) in
+      current := remove_assoc id !current);
   raise e
-| Some i ->
-  let () = Mutex.lock lock in
-  let id = Thread.id (Thread.self ()) in
-  let () = current := (id, (e, i)) :: remove_assoc id !current in
-  let () = Mutex.unlock lock in
+  | Some i ->
+  CThread.with_lock lock ~scope:(fun () ->
+      let id = Thread.id (Thread.self ()) in
+      current := (id, (e, i)) :: remove_assoc id !current);
   raise e
 
 let find_and_remove () =
-  let () = Mutex.lock lock in
-  let id = Thread.id (Thread.self ()) in
-  let (v, l) = find_and_remove_assoc id !current in
-  let () = current := l in
-  let () = Mutex.unlock lock in
-  v
+  CThread.with_lock lock ~scope:(fun () ->
+      let id = Thread.id (Thread.self ()) in
+      let (v, l) = find_and_remove_assoc id !current in
+      let () = current := l in
+      v)
 
 let info e =
   let (src, data) = find_and_remove () in
