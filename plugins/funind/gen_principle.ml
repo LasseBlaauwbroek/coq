@@ -1887,13 +1887,12 @@ let make_graph (f_ref : GlobRef.t) =
   let c,c_body =
     match f_ref with
     | GlobRef.ConstRef c ->
-      begin
-        try c,Global.lookup_constant c
-        with Not_found ->
-          CErrors.user_err Pp.(str "Cannot find " ++ Printer.pr_leconstr_env env sigma (EConstr.mkConst c))
-      end
-    | _ ->
-      CErrors.user_err Pp.(str "Not a function reference")
+      if Environ.mem_constant c (Global.env ()) then (c, Global.lookup_constant c) else
+        CErrors.user_err
+          Pp.(
+            str "Cannot find "
+            ++ Printer.pr_leconstr_env env sigma (EConstr.mkConst c))
+    | _ -> CErrors.user_err Pp.(str "Not a function reference")
   in
   (match Global.body_of_constant_body Library.indirect_accessor c_body with
    | None ->
