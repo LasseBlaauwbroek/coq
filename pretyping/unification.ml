@@ -197,7 +197,8 @@ let pose_all_metas_as_evars env evd t =
   let rec aux t = match EConstr.kind !evdref t with
   | Meta mv ->
       (match Evd.meta_opt_fvalue !evdref mv with
-       | Some ({rebus=c},_) -> c
+       | Some ({rebus=c;freemetas=mvs},_) ->
+         if Evd.Metaset.is_empty mvs then c else aux c
        | None ->
         let {rebus=ty;freemetas=mvs} = Evd.meta_ftype evd mv in
         let ty = if Evd.Metaset.is_empty mvs then ty else aux ty in
