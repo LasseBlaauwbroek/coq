@@ -227,7 +227,7 @@ let build_sym_scheme env ind =
 
 let sym_scheme_kind =
   declare_individual_scheme_object "_sym_internal"
-  (fun _ ind ->
+  (fun ind ->
     let c, ctx = build_sym_scheme (Global.env() (* side-effect! *)) ind in
       (c, ctx))
 
@@ -302,7 +302,7 @@ let build_sym_involutive_scheme env ind =
 let sym_involutive_scheme_kind =
   declare_individual_scheme_object "_sym_involutive"
   ~deps:(fun ind -> [SchemeIndividualDep (ind, sym_scheme_kind)])
-  (fun _ ind ->
+  (fun ind ->
     build_sym_involutive_scheme (Global.env() (* side-effect! *)) ind)
 
 (**********************************************************************)
@@ -702,7 +702,7 @@ let rew_l2r_dep_scheme_kind =
     SchemeIndividualDep (ind, sym_scheme_kind);
     SchemeIndividualDep (ind, sym_involutive_scheme_kind);
   ])
-  (fun _ ind -> build_l2r_rew_scheme true (Global.env()) ind InType)
+  (fun ind -> build_l2r_rew_scheme true (Global.env()) ind InType)
 
 (**********************************************************************)
 (* Dependent rewrite from right-to-left in conclusion                 *)
@@ -712,7 +712,7 @@ let rew_l2r_dep_scheme_kind =
 (**********************************************************************)
 let rew_r2l_dep_scheme_kind =
   declare_individual_scheme_object "_rew_dep"
-  (fun _ ind -> build_r2l_rew_scheme true (Global.env()) ind InType)
+  (fun ind -> build_r2l_rew_scheme true (Global.env()) ind InType)
 
 (**********************************************************************)
 (* Dependent rewrite from right-to-left in hypotheses                 *)
@@ -722,7 +722,7 @@ let rew_r2l_dep_scheme_kind =
 (**********************************************************************)
 let rew_r2l_forward_dep_scheme_kind =
   declare_individual_scheme_object "_rew_fwd_dep"
-  (fun _ ind -> build_r2l_forward_rew_scheme true (Global.env()) ind InType)
+  (fun ind -> build_r2l_forward_rew_scheme true (Global.env()) ind InType)
 
 (**********************************************************************)
 (* Dependent rewrite from left-to-right in hypotheses                 *)
@@ -732,7 +732,7 @@ let rew_r2l_forward_dep_scheme_kind =
 (**********************************************************************)
 let rew_l2r_forward_dep_scheme_kind =
   declare_individual_scheme_object "_rew_fwd_r_dep"
-  (fun _ ind -> build_l2r_forward_rew_scheme true (Global.env()) ind InType)
+  (fun ind -> build_l2r_forward_rew_scheme true (Global.env()) ind InType)
 
 (**********************************************************************)
 (* Non-dependent rewrite from either left-to-right in conclusion or   *)
@@ -745,7 +745,7 @@ let rew_l2r_forward_dep_scheme_kind =
 (**********************************************************************)
 let rew_l2r_scheme_kind =
   declare_individual_scheme_object "_rew_r"
-  (fun _ ind -> fix_r2l_forward_rew_scheme
+  (fun ind -> fix_r2l_forward_rew_scheme
      (build_r2l_forward_rew_scheme false (Global.env()) ind InType))
 
 (**********************************************************************)
@@ -756,7 +756,7 @@ let rew_l2r_scheme_kind =
 (**********************************************************************)
 let rew_r2l_scheme_kind =
   declare_individual_scheme_object "_rew"
-  (fun _ ind -> build_r2l_rew_scheme false (Global.env()) ind InType)
+  (fun ind -> build_r2l_rew_scheme false (Global.env()) ind InType)
 
 (* End of rewriting schemes *)
 
@@ -837,6 +837,6 @@ let build_congr env (eq,refl,ctx) ind =
   in c, UState.of_context_set ctx
 
 let congr_scheme_kind = declare_individual_scheme_object "_congr"
-  (fun _ ind ->
+  (fun ind ->
      (* May fail if equality is not defined *)
    build_congr (Global.env()) (get_coq_eq Univ.ContextSet.empty) ind)
