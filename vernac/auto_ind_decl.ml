@@ -406,7 +406,7 @@ let destruct_ind env sigma c =
 so from Ai we can find the correct eq_Ai bl_ai or lb_ai
 *)
 (* used in the leib -> bool side*)
-let do_replace_lb mode lb_scheme_key aavoid narg p q =
+let do_replace_lb lb_scheme_key aavoid narg p q =
   let open EConstr in
   let avoid = Array.of_list aavoid in
   let do_arg env sigma hd v offset =
@@ -613,7 +613,7 @@ let compute_bl_goal ind lnamesparrec nparrec =
               (mkApp(eq (),[|mkFullInd (ind,u) (nparrec+3);mkVar n;mkVar m|]))
         )))
 
-let compute_bl_tact mode bl_scheme_key ind lnamesparrec nparrec =
+let compute_bl_tact bl_scheme_key ind lnamesparrec nparrec =
   let list_id = list_id lnamesparrec in
   let avoid = ref [] in
       let first_intros =
@@ -705,7 +705,7 @@ let make_bl_scheme mode mind =
   let side_eff = side_effect_of_mode mode in
   let bl_goal = EConstr.of_constr bl_goal in
   let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff (Global.env()) ctx bl_goal
-    (compute_bl_tact mode (!bl_scheme_kind_aux()) (ind, EConstr.EInstance.empty) lnamesparrec nparrec)
+    (compute_bl_tact (!bl_scheme_kind_aux()) (ind, EConstr.EInstance.empty) lnamesparrec nparrec)
   in
   ([|ans|], ctx)
 
@@ -765,7 +765,7 @@ let compute_lb_goal ind lnamesparrec nparrec =
               (mkApp(eq,[|bb;mkApp(eqI,[|mkVar n;mkVar m|]);tt|]))
         )))
 
-let compute_lb_tact mode lb_scheme_key ind lnamesparrec nparrec =
+let compute_lb_tact lb_scheme_key ind lnamesparrec nparrec =
   let list_id = list_id lnamesparrec in
     let avoid = ref [] in
       let first_intros =
@@ -808,7 +808,7 @@ let compute_lb_tact mode lb_scheme_key ind lnamesparrec nparrec =
                         | App(c,ca) -> (match (EConstr.kind sigma ca.(1)) with
                           | App(c',ca') ->
                               let n = Array.length ca' in
-                              do_replace_lb mode lb_scheme_key
+                              do_replace_lb lb_scheme_key
                                 (!avoid)
                                 nparrec
                                 ca'.(n-2) ca'.(n-1)
@@ -838,7 +838,7 @@ let make_lb_scheme mode mind =
   let side_eff = side_effect_of_mode mode in
   let lb_goal = EConstr.of_constr lb_goal in
   let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff (Global.env()) ctx lb_goal
-    (compute_lb_tact mode (!lb_scheme_kind_aux()) ind lnamesparrec nparrec)
+    (compute_lb_tact (!lb_scheme_kind_aux()) ind lnamesparrec nparrec)
   in
   ([|ans|], ctx)
 
