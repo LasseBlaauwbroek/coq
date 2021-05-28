@@ -100,8 +100,8 @@ let my_discr_tac = Equality.discr_tac false None
 let my_inj_tac x = Equality.inj inj_flags None false None (EConstr.mkVar x,NoBindings)
 
 (* reconstruct the inductive with the correct de Bruijn indexes *)
-let mkFullInd (ind,u) n =
-  let mib = Global.lookup_mind (fst ind) in
+let mkFullInd env (ind,u) n =
+  let mib = Environ.lookup_mind (fst ind) env in
   let nparams = mib.mind_nparams in
   let nparrec = mib.mind_nparams_rec in
   (* params context divided *)
@@ -126,11 +126,9 @@ let get_scheme handle k ind = match local_lookup_scheme handle k ind with
 
 let beq_scheme_kind_aux = ref (fun _ -> failwith "Undefined")
 
-let get_inductive_deps kn =
-  (* fetching global env *)
-  let env = Global.env() in
+let get_inductive_deps env kn =
   (* fetching the mutual inductive body *)
-  let mib = Global.lookup_mind kn in
+  let mib = Environ.lookup_mind kn env in
   (* number of inductives in the mutual *)
   let nb_ind = Array.length mib.mind_packets in
   (* number of params in the type *)
@@ -167,16 +165,14 @@ let get_inductive_deps kn =
   in
   Array.fold_left_i (fun i accu _ -> make_one_eq accu i) [] mib.mind_packets
 
-let build_beq_scheme_deps kn =
-  let inds = get_inductive_deps kn in
+let build_beq_scheme_deps env kn =
+  let inds = get_inductive_deps env kn in
   List.map (fun ind -> SchemeMutualDep (ind, !beq_scheme_kind_aux ())) inds
 
-let build_beq_scheme handle kn =
+let build_beq_scheme env handle kn =
   check_bool_is_defined ();
-  (* fetching global env *)
-  let env = Global.env() in
   (* fetching the mutual inductive body *)
-  let mib = Global.lookup_mind kn in
+  let mib = Environ.lookup_mind kn env in
   (* number of inductives in the mutual *)
   let nb_ind = Array.length mib.mind_packets in
   (* number of params in the type *)
@@ -300,7 +296,7 @@ let build_beq_scheme handle kn =
   let do_predicate rel_list n =
      List.fold_left (fun a b -> mkLambda(make_annot Anonymous Sorts.Relevant,b,a))
       (mkLambda (make_annot Anonymous Sorts.Relevant,
-                 mkFullInd ind (n+3+(List.length rettyp_l)+nb_ind-1),
+                 mkFullInd env ind (n+3+(List.length rettyp_l)+nb_ind-1),
                  (bb ())))
       (List.rev rettyp_l) in
   (* make_one_eq *)
@@ -354,8 +350,8 @@ let build_beq_scheme handle kn =
                                   mkVar (Id.of_string "Y") ,ar2))
                          (constrsi.(i).cs_args))
         done;
-        mkNamedLambda (make_annot (Id.of_string "X") Sorts.Relevant) (mkFullInd ind (nb_ind-1+1))  (
-          mkNamedLambda (make_annot (Id.of_string "Y") Sorts.Relevant) (mkFullInd ind (nb_ind-1+2))  (
+        mkNamedLambda (make_annot (Id.of_string "X") Sorts.Relevant) (mkFullInd env ind (nb_ind-1+1))  (
+          mkNamedLambda (make_annot (Id.of_string "Y") Sorts.Relevant) (mkFullInd env ind (nb_ind-1+2))  (
             mkCase (ci, do_predicate rel_list 0,mkVar (Id.of_string "X"),ar)))
     in (* build_beq_scheme *)
     let names = Array.make nb_ind (make_annot Anonymous Sorts.Relevant) and
@@ -364,8 +360,8 @@ let build_beq_scheme handle kn =
     let u = Univ.Instance.empty in
     for i=0 to (nb_ind-1) do
         names.(i) <- make_annot (Name (Id.of_string (rec_name i))) Sorts.Relevant;
-        types.(i) <- mkArrow (mkFullInd ((kn,i),u) 0) Sorts.Relevant
-                     (mkArrow (mkFullInd ((kn,i),u) 1) Sorts.Relevant (bb ()));
+        types.(i) <- mkArrow (mkFullInd env ((kn,i),u) 0) Sorts.Relevant
+                     (mkArrow (mkFullInd env ((kn,i),u) 1) Sorts.Relevant (bb ()));
         let c = make_one_eq i in
         cores.(i) <- c;
     done;
@@ -385,7 +381,7 @@ let build_beq_scheme handle kn =
           Vars.substl subst cores.(i)
         in
         create_input fix),
-       UState.make ~lbound:(Global.universes_lbound ()) (Global.universes ()))
+       UState.make ~lbound:(Environ.universes_lbound env) (Environ.universes env))
 
 let beq_scheme_kind =
   declare_mutual_scheme_object "_beq"
@@ -573,7 +569,7 @@ let eqI handle ind l =
 
 open Namegen
 
-let compute_bl_goal handle ind lnamesparrec nparrec =
+let compute_bl_goal env handle ind lnamesparrec nparrec =
   let eqI = eqI handle ind lnamesparrec in
   let list_id = list_id lnamesparrec in
   let avoid = List.fold_right (Nameops.Name.fold_right (fun id l -> Id.Set.add id l)) (List.map RelDecl.get_name lnamesparrec) Id.Set.empty in
@@ -609,12 +605,12 @@ let compute_bl_goal handle ind lnamesparrec nparrec =
           m = next_ident_away (Id.of_string "y") avoid in
       let u = Univ.Instance.empty in
      create_input (
-        mkNamedProd (make_annot n Sorts.Relevant) (mkFullInd (ind,u) nparrec) (
-          mkNamedProd (make_annot m Sorts.Relevant) (mkFullInd (ind,u) (nparrec+1)) (
+        mkNamedProd (make_annot n Sorts.Relevant) (mkFullInd env (ind,u) nparrec) (
+          mkNamedProd (make_annot m Sorts.Relevant) (mkFullInd env (ind,u) (nparrec+1)) (
             mkArrow
               (mkApp(eq (),[|bb ();mkApp(eqI,[|mkVar n;mkVar m|]);tt ()|]))
               Sorts.Relevant
-              (mkApp(eq (),[|mkFullInd (ind,u) (nparrec+3);mkVar n;mkVar m|]))
+              (mkApp(eq (),[|mkFullInd env (ind,u) (nparrec+3);mkVar n;mkVar m|]))
         )))
 
 let compute_bl_tact handle ind lnamesparrec nparrec =
@@ -688,8 +684,8 @@ repeat ( apply andb_prop in z;let z1:= fresh "Z" in destruct z as [z1 z]).
                     ]
       end
 
-let make_bl_scheme handle mind =
-  let mib = Global.lookup_mind mind in
+let make_bl_scheme env handle mind =
+  let mib = Environ.lookup_mind mind env in
   if not (Int.equal (Array.length mib.mind_packets) 1) then
     user_err
       (str "Automatic building of boolean->Leibniz lemmas not supported");
@@ -698,16 +694,16 @@ let make_bl_scheme handle mind =
   let nparrec = mib.mind_nparams_rec in
   let lnonparrec,lnamesparrec = (* TODO subst *)
     context_chop (nparams-nparrec) mib.mind_params_ctxt in
-  let bl_goal = compute_bl_goal handle ind lnamesparrec nparrec in
-  let ctx = UState.make ~lbound:(Global.universes_lbound ()) (Global.universes ()) in
+  let bl_goal = compute_bl_goal env handle ind lnamesparrec nparrec in
+  let ctx = UState.make ~lbound:(Environ.universes_lbound env) (Environ.universes env) in
   let bl_goal = EConstr.of_constr bl_goal in
-  let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff:false (Global.env()) ctx bl_goal
+  let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff:false env ctx bl_goal
     (compute_bl_tact handle (ind, EConstr.EInstance.empty) lnamesparrec nparrec)
   in
   ([|ans|], ctx)
 
-let make_bl_scheme_deps ind =
-  let inds = get_inductive_deps ind in
+let make_bl_scheme_deps env ind =
+  let inds = get_inductive_deps env ind in
   let map ind = SchemeMutualDep (ind, !bl_scheme_kind_aux ()) in
   SchemeMutualDep (ind, beq_scheme_kind) :: List.map map inds
 
@@ -721,7 +717,7 @@ let _ = bl_scheme_kind_aux := fun () -> bl_scheme_kind
 (**********************************************************************)
 (* Leibniz->Boolean *)
 
-let compute_lb_goal handle ind lnamesparrec nparrec =
+let compute_lb_goal env handle ind lnamesparrec nparrec =
   let list_id = list_id lnamesparrec in
   let eq = eq () and tt = tt () and bb = bb () in
   let avoid = List.fold_right (Nameops.Name.fold_right (fun id l -> Id.Set.add id l)) (List.map RelDecl.get_name lnamesparrec) Id.Set.empty in
@@ -759,10 +755,10 @@ let compute_lb_goal handle ind lnamesparrec nparrec =
           m = next_ident_away (Id.of_string "y") avoid in
       let u = Univ.Instance.empty in
       create_input (
-        mkNamedProd (make_annot n Sorts.Relevant) (mkFullInd (ind,u) nparrec) (
-          mkNamedProd (make_annot m Sorts.Relevant) (mkFullInd (ind,u) (nparrec+1)) (
+        mkNamedProd (make_annot n Sorts.Relevant) (mkFullInd env (ind,u) nparrec) (
+          mkNamedProd (make_annot m Sorts.Relevant) (mkFullInd env (ind,u) (nparrec+1)) (
             mkArrow
-              (mkApp(eq,[|mkFullInd (ind,u) (nparrec+2);mkVar n;mkVar m|]))
+              (mkApp(eq,[|mkFullInd env (ind,u) (nparrec+2);mkVar n;mkVar m|]))
               Sorts.Relevant
               (mkApp(eq,[|bb;mkApp(eqI,[|mkVar n;mkVar m|]);tt|]))
         )))
@@ -823,8 +819,8 @@ let compute_lb_tact handle ind lnamesparrec nparrec =
                     ]
       end
 
-let make_lb_scheme handle mind =
-  let mib = Global.lookup_mind mind in
+let make_lb_scheme env handle mind =
+  let mib = Environ.lookup_mind mind env in
   if not (Int.equal (Array.length mib.mind_packets) 1) then
     user_err
       (str "Automatic building of Leibniz->boolean lemmas not supported");
@@ -833,16 +829,16 @@ let make_lb_scheme handle mind =
   let nparrec = mib.mind_nparams_rec in
   let lnonparrec,lnamesparrec =
     context_chop (nparams-nparrec) mib.mind_params_ctxt in
-  let lb_goal = compute_lb_goal handle ind lnamesparrec nparrec in
-  let ctx = UState.make ~lbound:(Global.universes_lbound ()) (Global.universes ()) in
+  let lb_goal = compute_lb_goal env handle ind lnamesparrec nparrec in
+  let ctx = UState.make ~lbound:(Environ.universes_lbound env) (Environ.universes env) in
   let lb_goal = EConstr.of_constr lb_goal in
-  let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff:false (Global.env()) ctx lb_goal
+  let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff:false env ctx lb_goal
     (compute_lb_tact handle ind lnamesparrec nparrec)
   in
   ([|ans|], ctx)
 
-let make_lb_scheme_deps ind =
-  let inds = get_inductive_deps ind in
+let make_lb_scheme_deps env ind =
+  let inds = get_inductive_deps env ind in
   let map ind = SchemeMutualDep (ind, !lb_scheme_kind_aux ()) in
   SchemeMutualDep (ind, beq_scheme_kind) :: List.map map inds
 
@@ -861,7 +857,7 @@ let check_not_is_defined () =
   then raise (UndefinedCst "not")
 
 (* {n=m}+{n<>m}  part  *)
-let compute_dec_goal ind lnamesparrec nparrec =
+let compute_dec_goal env ind lnamesparrec nparrec =
   check_not_is_defined ();
   let eq = eq () and tt = tt () and bb = bb () in
   let list_id = list_id lnamesparrec in
@@ -911,10 +907,10 @@ let compute_dec_goal ind lnamesparrec nparrec =
     in
       let n = next_ident_away (Id.of_string "x") avoid and
           m = next_ident_away (Id.of_string "y") avoid in
-        let eqnm = mkApp(eq,[|mkFullInd ind (2*nparrec+2);mkVar n;mkVar m|]) in
+        let eqnm = mkApp(eq,[|mkFullInd env ind (2*nparrec+2);mkVar n;mkVar m|]) in
         create_input (
-          mkNamedProd (make_annot n Sorts.Relevant) (mkFullInd ind (2*nparrec)) (
-            mkNamedProd (make_annot m Sorts.Relevant) (mkFullInd ind (2*nparrec+1)) (
+          mkNamedProd (make_annot n Sorts.Relevant) (mkFullInd env ind (2*nparrec)) (
+            mkNamedProd (make_annot m Sorts.Relevant) (mkFullInd env ind (2*nparrec+1)) (
               mkApp(sumbool(),[|eqnm;mkApp (UnivGen.constr_of_monomorphic_global @@ Coqlib.lib_ref "core.not.type",[|eqnm|])|])
           )
         )
@@ -1000,26 +996,26 @@ let compute_dec_tact handle ind lnamesparrec nparrec =
   ]
   end
 
-let make_eq_decidability handle mind =
-  let mib = Global.lookup_mind mind in
+let make_eq_decidability env handle mind =
+  let mib = Environ.lookup_mind mind env in
   if not (Int.equal (Array.length mib.mind_packets) 1) then
     raise DecidabilityMutualNotSupported;
   let ind = (mind,0) in
   let nparams = mib.mind_nparams in
   let nparrec = mib.mind_nparams_rec in
   let u = Univ.Instance.empty in
-  let ctx = UState.make ~lbound:(Global.universes_lbound ()) (Global.universes ()) in
+  let ctx = UState.make ~lbound:(Environ.universes_lbound env) (Environ.universes env) in
   let lnonparrec,lnamesparrec =
     context_chop (nparams-nparrec) mib.mind_params_ctxt in
-  let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff:false (Global.env()) ctx
-    (EConstr.of_constr (compute_dec_goal (ind,u) lnamesparrec nparrec))
+  let (ans, _, ctx) = Pfedit.build_by_tactic ~poly:false ~side_eff:false env ctx
+    (EConstr.of_constr (compute_dec_goal env (ind,u) lnamesparrec nparrec))
     (compute_dec_tact handle ind lnamesparrec nparrec)
   in
   ([|ans|], ctx)
 
 let eq_dec_scheme_kind =
   declare_mutual_scheme_object "_eq_dec"
-  ~deps:(fun ind -> [SchemeMutualDep (ind, bl_scheme_kind); SchemeMutualDep (ind, lb_scheme_kind)])
+  ~deps:(fun _ ind -> [SchemeMutualDep (ind, bl_scheme_kind); SchemeMutualDep (ind, lb_scheme_kind)])
   make_eq_decidability
 
 (* The eq_dec_scheme proofs depend on the equality and discr tactics
