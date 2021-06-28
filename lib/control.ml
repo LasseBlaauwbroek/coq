@@ -39,11 +39,15 @@ let unix_timeout n f x e =
     let res = f x in
     restore_timeout ();
     res
-  with Timeout ->
+  with
+  |Timeout ->
     let e = Backtrace.add_backtrace e in
     restore_timeout ();
     Exninfo.iraise e
-
+  | e ->
+    let e = Backtrace.add_backtrace e in
+    restore_timeout ();
+    Exninfo.iraise e
 
 let windows_timeout n f x e =
   let killed = ref false in
