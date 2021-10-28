@@ -201,7 +201,7 @@ Section Relations.
 
   Global Instance pointwise_subrelation `(sub : subrelation B R R') :
     subrelation (pointwise_relation R) (pointwise_relation R') | 4.
-  Proof. reduce. unfold pointwise_relation in *. apply sub. apply H. Qed.
+  Proof. reduce. unfold pointwise_relation in *. Unset Tactician Record. apply sub. apply H. Set Tactician Record. Qed.
   
   (** For dependent function types. *)
   Lemma forall_subrelation (R S : forall x : A, relation (P x)) :
