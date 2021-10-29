@@ -171,7 +171,7 @@ Section Relations.
   (** Subrelations induce a morphism on the identity. *)
   
   Global Instance subrelation_id_proper `(subrelation A RA RA') : Proper (RA ==> RA') id.
-  Proof. firstorder. Qed.
+  Proof. Unset Tactician Record. firstorder. Set Tactician Record. Qed.
 
   (** The subrelation property goes through products as usual. *)
   
