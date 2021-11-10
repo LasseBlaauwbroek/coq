@@ -128,3 +128,6 @@ Open Scope type_scope.
 Declare ML Module "ltac_plugin".
 
 Global Set Default Proof Mode "Classic".
+
+From Tactician Require Import Ltac1.Record.
+Global Set Default Proof Mode "Tactician Ltac1".
