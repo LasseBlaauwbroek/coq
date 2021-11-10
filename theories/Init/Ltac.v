@@ -11,3 +11,6 @@
 Declare ML Module "ltac_plugin".
 
 Export Set Default Proof Mode "Classic".
+
+From Tactician Require Import Ltac1.Record.
+Export Set Default Proof Mode "Tactician Ltac1".
