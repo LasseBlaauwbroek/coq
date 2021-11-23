@@ -978,8 +978,9 @@ let ssrabstract dgens =
       Ssrcommon.unfold[abstract;abstract_key]
     ]
   end in
-  let interp_gens { gens } ~conclusion = Goal.enter begin fun g ->
-   Ssrcommon.tacSIGMA >>= fun gl0 ->
+  let interp_gens { gens } ~conclusion =
+    Ssrcommon.tacSIGMA >>= fun gl0 ->
+    Goal.enter begin fun g ->
      let open Ssrmatching in
      let ipats = List.map (fun (_,cp) ->
        match id_of_pattern (interp_cpattern gl0 cp None) with
