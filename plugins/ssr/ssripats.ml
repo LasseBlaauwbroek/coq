@@ -989,11 +989,11 @@ let ssrabstract dgens =
       Ssrcommon.unfold[abstract;abstract_key]
     ]
   end in
-  let interp_gens { gens } ~conclusion = Goal.enter begin fun g ->
-   Ssrcommon.tacSIGMA >>= fun gl0 ->
+  let interp_gens { gens } ~conclusion = Goal.enter begin fun gl ->
      let open Ssrmatching in
+     let open Tacmach in
      let ipats = List.map (fun (_,cp) ->
-       match id_of_pattern (interp_cpattern (Tacmach.Old.pf_env gl0) (Tacmach.Old.project gl0) cp None) with
+       match id_of_pattern (interp_cpattern (pf_env gl) (project gl) cp None) with
        | None -> IPatAnon (One None)
        | Some id -> IPatId id)
        (List.tl gens) in
