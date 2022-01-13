@@ -282,10 +282,15 @@ val document_edit_hook : (Stateid.t -> unit) Hook.t
 (** User requests evaluation of a sentence *)
 val sentence_exec_hook : (Stateid.t -> unit) Hook.t
 
+val pre_known_state_hook : (Stateid.t -> unit) Hook.t
+val post_known_state_hook : (Stateid.t -> unit) Hook.t
+
 val get_doc : Feedback.doc_id -> doc
 
 val state_of_id : doc:doc ->
   Stateid.t -> [ `Valid of Vernacstate.t option | `Expired | `Error of exn ]
+
+val is_interactive : unit -> bool
 
 (* Queries for backward compatibility *)
 val current_proof_depth : doc:doc -> int

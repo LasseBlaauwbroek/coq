@@ -3,7 +3,9 @@
  (public_name coq-core.plugins.ltac)
  (synopsis "Coq's LTAC tactic language")
  (modules :standard \ tauto)
- (libraries coq-core.stm))
+ (libraries coq-core.stm)
+ (foreign_stubs (language c) (names low_priority))
+)
 
 (library
  (name tauto_plugin)

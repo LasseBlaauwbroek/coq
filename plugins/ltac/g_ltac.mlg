@@ -523,3 +523,7 @@ END
 VERNAC COMMAND EXTEND VernacPrintLtacs CLASSIFIED AS QUERY
 | [ "Print" "Ltac" "Signatures" ] -> { Tacentries.print_ltacs () }
 END
+
+VERNAC COMMAND EXTEND AutomaticTactic CLASSIFIED AS SIDEFF
+| [ "Automatic" "Tactic" tactic(t) ] -> { Autotac.register_auto_tactic (Tacintern.glob_tactic t) }
+END

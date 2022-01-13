@@ -112,6 +112,11 @@ let document_edit, document_edit_hook = Hook.make
 let sentence_exec, sentence_exec_hook = Hook.make
  ~default:(fun _ -> ()) ()
 
+let pre_known_sate, pre_known_state_hook = Hook.make
+    ~default:(fun _ -> ()) ()
+let post_known_sate, post_known_state_hook = Hook.make
+    ~default:(fun _ -> ()) ()
+
 include Hook
 
 (* enables:  Hooks.(call foo args) *)
@@ -2296,7 +2301,9 @@ let known_state ~doc ?(redefine_qed=false) ~cache id =
     State.define ~doc ?safe_id
       ~cache:cache_step ~redefine:redefine_qed ~feedback_processed step id;
     stm_prerr_endline (fun () -> "reached: "^ Stateid.to_string id) in
-  reach ~redefine_qed id
+  Hooks.(call pre_known_sate id);
+  reach ~redefine_qed id;
+  Hooks.(call post_known_sate id);
 
 end (* }}} *)
 [@@@ocaml.warning "+60"]
@@ -2945,6 +2952,8 @@ let proofname b = match VCS.get_branch b with
 let get_all_proof_names ~doc =
   List.map unmangle (CList.map_filter proofname (VCS.branches ()))
 
+let is_interactive = VCS.is_interactive
+
 (* Export hooks *)
 let state_computed_hook = Hooks.state_computed_hook
 let state_ready_hook = Hooks.state_ready_hook
@@ -2953,6 +2962,8 @@ let unreachable_state_hook = Hooks.unreachable_state_hook
 let document_add_hook = Hooks.document_add_hook
 let document_edit_hook = Hooks.document_edit_hook
 let sentence_exec_hook = Hooks.sentence_exec_hook
+let pre_known_state_hook = Hooks.pre_known_state_hook
+let post_known_state_hook = Hooks.post_known_state_hook
 
 type document = VCS.vcs
 let backup () = VCS.backup ()

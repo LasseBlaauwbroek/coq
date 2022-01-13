@@ -101,7 +101,7 @@ let thread_friendly_input_value ic =
  * [Thread.sigmask] API raises Invalid_argument "not implemented",
  * hence we protect the call and turn the exception into a no-op *)
 let mask_sigalrm f x =
-  begin try ignore(Thread.sigmask Unix.SIG_BLOCK [Sys.sigalrm])
+  begin try ignore(Thread.sigmask Unix.SIG_BLOCK [Sys.sigalrm; Sys.sigint])
   with Invalid_argument _ -> () end;
   f x
 
