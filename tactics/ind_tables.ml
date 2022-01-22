@@ -200,13 +200,15 @@ let find_scheme kind (mind,i as ind) =
   | s,IndividualSchemeFunction (f, deps) ->
     let deps = match deps with None -> [] | Some deps -> deps (Global.env ()) ind in
     let eff = List.fold_left (fun eff dep -> declare_scheme_dependence eff dep) Evd.empty_side_effects deps in
-    let c, eff = define_individual_scheme_base kind s f ~internal:true None ind eff in
-    Proofview.tclEFFECTS eff <*> Proofview.tclUNIT c
+    Proofview.V82.wrap_exceptions (fun () ->
+        let c, eff = define_individual_scheme_base kind s f ~internal:true None ind eff in
+        Proofview.tclEFFECTS eff <*> Proofview.tclUNIT c)
   | s,MutualSchemeFunction (f, deps) ->
     let deps = match deps with None -> [] | Some deps -> deps (Global.env ()) mind in
     let eff = List.fold_left (fun eff dep -> declare_scheme_dependence eff dep) Evd.empty_side_effects deps in
-    let ca, eff = define_mutual_scheme_base kind s f ~internal:true [] mind eff in
-    Proofview.tclEFFECTS eff <*> Proofview.tclUNIT ca.(i)
+    Proofview.V82.wrap_exceptions (fun () ->
+        let ca, eff = define_mutual_scheme_base kind s f ~internal:true [] mind eff in
+        Proofview.tclEFFECTS eff <*> Proofview.tclUNIT ca.(i))
 
 let define_individual_scheme kind names ind =
   let _ , eff = define_individual_scheme kind ~internal:false names ind in
