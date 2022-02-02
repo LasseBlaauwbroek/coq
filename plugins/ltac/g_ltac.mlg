@@ -525,5 +525,6 @@ VERNAC COMMAND EXTEND VernacPrintLtacs CLASSIFIED AS QUERY
 END
 
 VERNAC COMMAND EXTEND AutomaticTactics CLASSIFIED AS SIDEFF
-| [ "Automatic" "Tactics" tactic_list(t) ] -> { Autotac_process.register_auto_tactic t }
+| [ "Automatic" "Tactics" "Process" tactic_list(t) ] -> { Autotac_process.register_auto_tactic t }
+| [ "Automatic" "Tactics" "Thread" tactic_list(t) ] -> { Autotac_thread.register_auto_tactic (List.map Tacintern.glob_tactic t) }
 END
