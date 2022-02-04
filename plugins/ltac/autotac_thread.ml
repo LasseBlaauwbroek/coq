@@ -24,7 +24,7 @@ let rec drain_sigints () =
   let p = Unix.sigpending () in
   if List.mem Sys.sigint p then
     (let _ = Thread.wait_signal [Sys.sigint] in
-     Feedback.msg_notice Pp.(str "signal awaited");
+     (* Feedback.msg_notice Pp.(str "signal awaited"); *)
      drain_sigints ())
 
 let terminate_threads () =
@@ -35,7 +35,7 @@ let terminate_threads () =
       let e = Event.receive terminating_message in
       let t = Event.sync e in
       Thread.join t;
-      Feedback.msg_info Pp.(str "sync");
+      (* Feedback.msg_info Pp.(str "sync"); *)
       threads := Int.Map.remove (Thread.id t) !threads;
       loop ()
     end

@@ -13,7 +13,7 @@ module TacTask : sig
 end = struct (* {{{ *)
 
   let forward_feedback { Feedback.doc_id = did; span_id = id; route; contents } =
-    print_endline "forward feedback";
+    (* print_endline "forward feedback"; *)
     Feedback.feedback ~did ~id ~route contents
 
   type task = {
@@ -27,7 +27,7 @@ end = struct (* {{{ *)
     r_tactic   : ComTactic.interpretable;
     r_name     : string }
 
-  type response = string
+  type response = unit
 
   let name = ref "autotacworker"
   let extra_env () = [||]
@@ -35,32 +35,31 @@ end = struct (* {{{ *)
   type worker_status = Fresh | Old of competence
 
   let task_match _ _ =
-    print_endline "task match";
+    (* print_endline "task match"; *)
     true
 
   (* run by the master, on a thread *)
   let request_of_task _ { t_state; t_tactic; t_kill; t_name } =
-    print_endline "request of task";
+    (* print_endline "request of task"; *)
     Some
       { r_state = t_state
       ; r_tactic = t_tactic
       ; r_name = t_name }
 
   let use_response _ _ s =
-    print_endline s;
-    print_endline "use response";
+    (* print_endline "use response"; *)
     `End
 
   let on_marshal_error err { t_name } =
-    print_endline "on marshal error";
+    (* print_endline "on marshal error"; *)
     stm_pr_err ("Fatal marshal error: " ^ t_name );
     flush_all (); exit 1
 
   let on_task_cancellation_or_expiration_or_slave_death = function
     | Some { t_kill } ->
-      print_endline "killing ba";
+      (* print_endline "killing ba"; *)
       t_kill ()
-    | _ -> print_endline "not killing"; ()
+    | _ -> ()
 
   (* let state = ref None *)
 
@@ -68,8 +67,7 @@ end = struct (* {{{ *)
     Vernacstate.unfreeze_interp_state r_state;
     Vernacstate.LemmaStack.with_top (Option.get r_state.Vernacstate.lemmas) ~f:(fun pstate ->
         let g = Goal_select.get_default_goal_selector () in
-        ignore (ComTactic.solve ~pstate g ~info:None r_tactic ~with_end_tac:false));
-    "hihi"
+        ignore (ComTactic.solve ~pstate g ~info:None r_tactic ~with_end_tac:false))
 
   let name_of_task { t_name } = t_name
   let name_of_request { r_name } = r_name
