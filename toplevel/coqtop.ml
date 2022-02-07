@@ -159,6 +159,8 @@ type toplevel_options = {
 }
 
 let init_document opts stm_options injections =
+  let injections =
+    injections @ [RequireInjection ("AutoTactic", Some "Tactician", Some false)] in
   (* Coq init process, phase 3: Stm initialization, backtracking state.
 
      It is essential that the module system is in a consistent
