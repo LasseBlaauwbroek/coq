@@ -61,6 +61,8 @@ let pre_known_state id =
 (* let time2 = Unix.gettimeofday () in *)
 (* Feedback.msg_notice Pp.(str "pre-time: " ++ (str @@ string_of_float (time2 -. time))) *)
 
+let logger, logger_hook = Hook.make ()
+
 let start_auto_tac p tac =
   let tac = Tacinterp.eval_tactic tac in
   let initialized_message = Event.new_channel () in
@@ -79,14 +81,19 @@ let start_auto_tac p tac =
        Vernacstate.System.protect (fun () ->
            ignore (Proof.solve (Goal_select.get_default_goal_selector ()) None tac p)) ();
      with
-     | Sys.Break -> ()
-     (* Feedback.msg_info Pp.(str "break received") *)
-     | any ->
-       let (e, info) = Exninfo.capture any in
-       let loc = Loc.get_loc info in
-       let msg = CErrors.iprint (e, info) in
-       let msg = Pp.(str "Automatic Tactic: " ++ msg) in
-       Feedback.msg_warning ?loc msg;
+     | e ->
+       (match e with
+        | Sys.Break | CErrors.Timeout | Logic_monad.TacticFailure _ -> Hook.get logger ()
+        | _ -> ());
+       match e with
+       | Sys.Break -> ()
+       (* Feedback.msg_info Pp.(str "break received") *)
+       | any ->
+         let (e, info) = Exninfo.capture any in
+         let loc = Loc.get_loc info in
+         let msg = CErrors.iprint (e, info) in
+         let msg = Pp.(str "Automatic Tactic: " ++ msg) in
+         Feedback.msg_warning ?loc msg;
     );
     let e = Event.send terminating_message (Thread.self ()) in
     Event.sync e
