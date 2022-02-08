@@ -48,7 +48,9 @@ let terminate_threads () =
   loop ();
   drain_sigints ();
   ignore (Thread.sigmask Unix.SIG_SETMASK prev_block);
-  Sys.set_signal Sys.sigint prev_signal
+  Sys.set_signal Sys.sigint prev_signal;
+  (* Allow timeout signals again now that all auto threads have been killed *)
+  ignore (Thread.sigmask Unix.SIG_UNBLOCK [Sys.sigalrm])
 
 let pre_known_state id =
   (* Feedback.msg_notice Pp.(str "Pre: " ++ Stateid.print id); *)
@@ -117,7 +119,11 @@ let post_known_state id =
        CErrors.anomaly Pp.(str "Autotac threads should not exist")
      | true, Some p, (_::_ as tacs), _ when not @@ Proof.no_focused_goal p ->
        (* Feedback.msg_info Pp.(str "post autotac" ++ Stateid.print id) *)
-       List.iter (start_auto_tac p) tacs
+       (* Block timeout signals on the main thread, so they arrive at the auto thread *)
+       (* TODO: This only works reliable with one auto-thread *)
+       ignore (Thread.sigmask Unix.SIG_BLOCK [Sys.sigalrm]);
+       List.iter (start_auto_tac p) tacs;
+       ()
      | _, _, _, _ -> ())
 (* let time2 = Unix.gettimeofday () in *)
 (* Feedback.msg_notice Pp.(str "post-time: " ++ (str @@ string_of_float (time2 -. time))) *)
