@@ -123,10 +123,10 @@ let post_known_state id =
        (* Feedback.msg_info Pp.(str "post autotac" ++ Stateid.print id) *)
        (* Block timeout signals on the main thread, so they arrive at the auto thread *)
        (* TODO: This only works reliable with one auto-thread *)
+       List.iter (start_auto_tac p) tacs;
        (try
           ignore (Thread.sigmask Unix.SIG_BLOCK [Sys.sigalrm])
         with _ -> ());
-       List.iter (start_auto_tac p) tacs;
        ()
      | _, _, _, _ -> ())
 (* let time2 = Unix.gettimeofday () in *)
