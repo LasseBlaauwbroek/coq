@@ -110,6 +110,8 @@ let post_known_state id =
        CErrors.anomaly Pp.(str "Autotac threads should not exist")
      | true, Some p, (_::_ as tacs), _ when not @@ Proof.no_focused_goal p ->
        (* Feedback.msg_info Pp.(str "post autotac" ++ Stateid.print id) *)
+       (* TODO: This is really evil *)
+       Flags.we_are_parsing := false;
        List.iter (start_auto_tac p) tacs
      | _, _, _, _ -> ())
 (* let time2 = Unix.gettimeofday () in *)

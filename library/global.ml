@@ -42,10 +42,10 @@ let global_env_summary_tag =
       unfreeze_function = (fun fr -> global_env := fr);
       init_function = (fun () -> global_env := Safe_typing.empty_environment) }
 
-let assert_not_parsing () =
-  if !Flags.we_are_parsing then
-    CErrors.anomaly (
-      Pp.strbrk"The global environment cannot be accessed during parsing.")
+let assert_not_parsing () = ()
+  (* if !Flags.we_are_parsing then *)
+  (*   CErrors.anomaly ( *)
+  (*     Pp.strbrk"The global environment cannot be accessed during parsing.") *)
 
 let safe_env () = assert_not_parsing(); !global_env
 
