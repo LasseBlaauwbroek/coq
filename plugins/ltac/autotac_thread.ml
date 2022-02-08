@@ -43,14 +43,20 @@ let terminate_threads () =
   let prev_signal = Sys.signal Sys.sigint (Sys.Signal_handle (fun _ ->
       (* Feedback.msg_notice Pp.(str "signal received " ++ (int @@ Thread.id @@ Thread.self ())); *)
       raise Sys.Break)) in
-  let prev_block = Thread.sigmask Unix.SIG_BLOCK [Sys.sigint] in
+  let prev_block =
+    try Thread.sigmask Unix.SIG_BLOCK [Sys.sigint]
+    with _ -> [] in
   (* Feedback.msg_notice Pp.(str "pre_join"); *)
   loop ();
   drain_sigints ();
-  ignore (Thread.sigmask Unix.SIG_SETMASK prev_block);
+  (try
+     ignore (Thread.sigmask Unix.SIG_SETMASK prev_block)
+   with _ -> ());
   Sys.set_signal Sys.sigint prev_signal;
   (* Allow timeout signals again now that all auto threads have been killed *)
-  ignore (Thread.sigmask Unix.SIG_UNBLOCK [Sys.sigalrm])
+  try
+    ignore (Thread.sigmask Unix.SIG_UNBLOCK [Sys.sigalrm])
+  with _ -> ()
 
 let pre_known_state id =
   (* Feedback.msg_notice Pp.(str "Pre: " ++ Stateid.print id); *)
@@ -70,7 +76,10 @@ let start_auto_tac p tac =
     (try
        (* low_priority (); *)
        (* Feedback.msg_notice Pp.(str "runner id: " ++ (int @@ Thread.id @@ Thread.self ())); *)
-       Fun.protect ~finally:(fun () -> ignore(Thread.sigmask Unix.SIG_BLOCK [Sys.sigint])) @@ fun () ->
+       Fun.protect ~finally:(fun () ->
+           try
+             ignore(Thread.sigmask Unix.SIG_BLOCK [Sys.sigint])
+           with _ -> ()) @@ fun () ->
        (* Make sure that we have entered the `try` and modified the main state
           before allowing the main thread to move on to another command. *)
        let e = Event.send initialized_message () in
@@ -114,7 +123,9 @@ let post_known_state id =
        (* Feedback.msg_info Pp.(str "post autotac" ++ Stateid.print id) *)
        (* Block timeout signals on the main thread, so they arrive at the auto thread *)
        (* TODO: This only works reliable with one auto-thread *)
-       ignore (Thread.sigmask Unix.SIG_BLOCK [Sys.sigalrm]);
+       (try
+          ignore (Thread.sigmask Unix.SIG_BLOCK [Sys.sigalrm])
+        with _ -> ());
        List.iter (start_auto_tac p) tacs;
        ()
      | _, _, _, _ -> ())
