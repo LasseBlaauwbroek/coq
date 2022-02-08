@@ -4,7 +4,7 @@
  (synopsis "Coq's LTAC tactic language")
  (modules :standard \ tauto)
  (libraries coq-core.stm)
- (foreign_stubs (language c) (names low_priority))
+ ; (foreign_stubs (language c) (names low_priority))
 )
 
 (library

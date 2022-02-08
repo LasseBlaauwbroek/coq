@@ -6,7 +6,7 @@
 (*    - Test in coqtop *)
 (*    - Test in vscode *)
 
-external low_priority : unit -> unit = "low_priority"
+(* external low_priority : unit -> unit = "low_priority" *)
 
 let auto_tactics = Summary.ref ~name:"AutomaticTacticsThread" []
 let threads = ref Int.Map.empty
