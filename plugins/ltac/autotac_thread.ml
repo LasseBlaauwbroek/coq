@@ -100,6 +100,8 @@ let start_auto_tac p tac =
        | Sys.Break -> ()
        (* Feedback.msg_info Pp.(str "break received") *)
        | CErrors.Timeout -> ()
+       | Logic_monad.TacticFailure _ -> ()
+       | Logic_monad.Tac_Timeout -> ()
        | any ->
          let (e, info) = Exninfo.capture any in
          let loc = Loc.get_loc info in
