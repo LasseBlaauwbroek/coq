@@ -99,6 +99,7 @@ let start_auto_tac p tac =
        match e with
        | Sys.Break -> ()
        (* Feedback.msg_info Pp.(str "break received") *)
+       | CErrors.Timeout -> ()
        | any ->
          let (e, info) = Exninfo.capture any in
          let loc = Loc.get_loc info in
