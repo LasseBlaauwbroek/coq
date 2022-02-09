@@ -38,9 +38,9 @@ let terminate_threads () =
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
       (try
          Unix.kill (Unix.getpid ()) Sys.sigint
-       with _ -> ());
+       with _ ->
+       Control.interrupt := true);
       (try
-         Control.interrupt := true;
          let e = Event.receive terminating_message in
          let t = Event.sync e in
          Thread.join t;
