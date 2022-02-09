@@ -40,13 +40,17 @@ let terminate_threads () =
       (*    Unix.kill (Unix.getpid ()) Sys.sigint *)
       (*  with _ -> *)
       (*    win32_interrupt (Unix.getpid ())); *)
-      Control.interrupt := true;
-      let e = Event.receive terminating_message in
-      let t = Event.sync e in
-      Thread.join t;
-      (* Feedback.msg_info Pp.(str "sync"); *)
-      threads := Int.Map.remove (Thread.id t) !threads;
-      loop ()
+      (try
+         Control.interrupt := true;
+         let e = Event.receive terminating_message in
+         let t = Event.sync e in
+         Thread.join t;
+         (* Feedback.msg_info Pp.(str "sync"); *)
+         threads := Int.Map.remove (Thread.id t) !threads;
+         Control.interrupt := false;
+       with Sys.Break ->
+         Control.interrupt := false);
+        loop ()
     end
   in
   let prev_signal = Sys.signal Sys.sigint (Sys.Signal_handle (fun _ ->
