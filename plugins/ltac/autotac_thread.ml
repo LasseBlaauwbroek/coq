@@ -37,10 +37,10 @@ let terminate_threads () =
     if not @@ Int.Map.is_empty !threads then begin
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
       (try
-         Feedback.msg_notice Pp.(str "kill");
+         (* Feedback.msg_notice Pp.(str "kill"); *)
          Unix.kill (Unix.getpid ()) Sys.sigint
        with _ ->
-         Feedback.msg_notice Pp.(str "set interrupt");
+         (* Feedback.msg_notice Pp.(str "set interrupt"); *)
          Control.interrupt := true);
       (try
          let e = Event.receive terminating_message in
@@ -104,8 +104,8 @@ let start_auto_tac p tac =
        Vernacstate.System.protect (fun () ->
            ignore (Proof.solve (Goal_select.get_default_goal_selector ()) None tac p)) ();
      with
-     | Sys.Break ->
-       Feedback.msg_info Pp.(str "break received")
+     | Sys.Break -> ()
+       (* Feedback.msg_info Pp.(str "break received") *)
      | any ->
        let (e, info) = Exninfo.capture any in
        let loc = Loc.get_loc info in
