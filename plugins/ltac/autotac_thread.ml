@@ -101,7 +101,7 @@ let start_auto_tac p tac =
        Event.sync e;
        (* Force the thread to yield for some time in order to give the main thread a chance to
           immediately cancel the thread and move on to the next command. *)
-       Unix.sleepf 0.2;
+       (* Unix.sleepf 0.2; *)
        Vernacstate.System.protect (fun () ->
            ignore (Proof.solve (Goal_select.get_default_goal_selector ()) None tac p)) ();
      with
