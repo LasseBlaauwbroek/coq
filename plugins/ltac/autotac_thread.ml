@@ -33,10 +33,10 @@ let terminate_threads () =
   let rec loop () =
     if not @@ Int.Map.is_empty !threads then begin
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
-      (if Sys.os_type == "Win32" then
-         win32_interrupt (Unix.getpid ())
-       else
-         Unix.kill (Unix.getpid ()) Sys.sigint);
+      (try
+         Unix.kill (Unix.getpid ()) Sys.sigint
+       with _ ->
+         win32_interrupt (Unix.getpid ()));
       let e = Event.receive terminating_message in
       let t = Event.sync e in
       Thread.join t;
