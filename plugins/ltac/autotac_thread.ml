@@ -8,6 +8,8 @@
 
 (* external low_priority : unit -> unit = "low_priority" *)
 
+external win32_interrupt : int -> unit = "win32_interrupt"
+
 let auto_tactics = Summary.ref ~name:"AutomaticTacticsThread" []
 let threads = ref Int.Map.empty
 let state = ref None
@@ -31,7 +33,10 @@ let terminate_threads () =
   let rec loop () =
     if not @@ Int.Map.is_empty !threads then begin
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
-      Unix.kill (Unix.getpid ()) Sys.sigint;
+      (if Sys.os_type == "Win32" then
+         win32_interrupt (Unix.getpid ())
+       else
+         Unix.kill (Unix.getpid ()) Sys.sigint);
       let e = Event.receive terminating_message in
       let t = Event.sync e in
       Thread.join t;
