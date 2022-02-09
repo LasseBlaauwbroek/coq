@@ -8,6 +8,8 @@
 
 (* external low_priority : unit -> unit = "low_priority" *)
 
+(* external win32_interrupt : int -> unit = "win32_interrupt" *)
+
 let auto_tactics = Summary.ref ~name:"AutomaticTacticsThread" []
 let threads = ref Int.Map.empty
 let state = ref None
@@ -21,17 +23,24 @@ let in_auto_tactic = Libobject.(declare_object @@ global_object_nodischarge
 let register_auto_tactic t = Lib.add_anonymous_leaf (in_auto_tactic t)
 
 let rec drain_sigints () =
-  let p = Unix.sigpending () in
-  if List.mem Sys.sigint p then
-    (let _ = Thread.wait_signal [Sys.sigint] in
-     (* Feedback.msg_notice Pp.(str "signal awaited"); *)
-     drain_sigints ())
+  try
+    let p = Unix.sigpending () in
+    if List.mem Sys.sigint p then
+      (let _ = Thread.wait_signal [Sys.sigint] in
+       (* Feedback.msg_notice Pp.(str "signal awaited"); *)
+       drain_sigints ())
+  with _ ->
+    ()
 
 let terminate_threads () =
   let rec loop () =
     if not @@ Int.Map.is_empty !threads then begin
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
-      Unix.kill (Unix.getpid ()) Sys.sigint;
+      (* (try *)
+      (*    Unix.kill (Unix.getpid ()) Sys.sigint *)
+      (*  with _ -> *)
+      (*    win32_interrupt (Unix.getpid ())); *)
+      Control.interrupt := true;
       let e = Event.receive terminating_message in
       let t = Event.sync e in
       Thread.join t;
