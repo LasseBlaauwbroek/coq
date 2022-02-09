@@ -39,6 +39,7 @@ let terminate_threads () =
       (try
          Unix.kill (Unix.getpid ()) Sys.sigint
        with _ ->
+         print_endline "set interrupt";
          Control.interrupt := true);
       (try
          let e = Event.receive terminating_message in
@@ -102,8 +103,8 @@ let start_auto_tac p tac =
        Vernacstate.System.protect (fun () ->
            ignore (Proof.solve (Goal_select.get_default_goal_selector ()) None tac p)) ();
      with
-     | Sys.Break -> ()
-     (* Feedback.msg_info Pp.(str "break received") *)
+     | Sys.Break ->
+       Feedback.msg_info Pp.(str "break received")
      | any ->
        let (e, info) = Exninfo.capture any in
        let loc = Loc.get_loc info in
