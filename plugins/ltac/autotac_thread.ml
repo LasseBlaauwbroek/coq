@@ -107,8 +107,6 @@ let start_auto_tac p tac =
     let e = Event.send terminating_message (Thread.self ()) in
     Event.sync e
   in
-  (* TODO: This is really evil *)
-  Flags.we_are_parsing := false;
   let t = Thread.create tfunc () in
   (* Wait until the thread performs the bare minimum initialization. *)
   let e = Event.receive initialized_message in
