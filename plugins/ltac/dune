@@ -5,9 +5,9 @@
  (modules :standard \ tauto)
  (libraries coq-core.stm)
  ; (foreign_stubs (language c) (names low_priority))
- (foreign_stubs
-  (language c)
-  (names windows_signal))
+ ; (foreign_stubs
+ ;  (language c)
+ ;  (names windows_signal))
 )
 
 (library
