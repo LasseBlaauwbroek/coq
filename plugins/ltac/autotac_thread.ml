@@ -36,10 +36,9 @@ let terminate_threads () =
   let rec loop () =
     if not @@ Int.Map.is_empty !threads then begin
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
-      (* (try *)
-      (*    Unix.kill (Unix.getpid ()) Sys.sigint *)
-      (*  with _ -> *)
-      (*    win32_interrupt (Unix.getpid ())); *)
+      (try
+         Unix.kill (Unix.getpid ()) Sys.sigint
+       with _ -> ());
       (try
          Control.interrupt := true;
          let e = Event.receive terminating_message in
