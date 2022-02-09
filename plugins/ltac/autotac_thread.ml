@@ -23,11 +23,14 @@ let in_auto_tactic = Libobject.(declare_object @@ global_object_nodischarge
 let register_auto_tactic t = Lib.add_anonymous_leaf (in_auto_tactic t)
 
 let rec drain_sigints () =
-  let p = Unix.sigpending () in
-  if List.mem Sys.sigint p then
-    (let _ = Thread.wait_signal [Sys.sigint] in
-     (* Feedback.msg_notice Pp.(str "signal awaited"); *)
-     drain_sigints ())
+  try
+    let p = Unix.sigpending () in
+    if List.mem Sys.sigint p then
+      (let _ = Thread.wait_signal [Sys.sigint] in
+       (* Feedback.msg_notice Pp.(str "signal awaited"); *)
+       drain_sigints ())
+  with _ ->
+    ()
 
 let terminate_threads () =
   let rec loop () =
