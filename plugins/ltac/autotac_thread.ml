@@ -37,10 +37,10 @@ let terminate_threads () =
     if not @@ Int.Map.is_empty !threads then begin
       (* We may be sending this signal too much, they are later caught through `drain_sigints`. *)
       (try
-         Feedback.msg_notice Pp.(str "kill");
+         (* Feedback.msg_notice Pp.(str "kill"); *)
          Unix.kill (Unix.getpid ()) Sys.sigint
        with _ ->
-         Feedback.msg_notice Pp.(str "set interrupt");
+         (* Feedback.msg_notice Pp.(str "set interrupt"); *)
          Control.interrupt := true);
       (try
          let e = Event.receive terminating_message in
@@ -111,8 +111,8 @@ let start_auto_tac p tac =
         | Sys.Break | CErrors.Timeout | Logic_monad.TacticFailure _ -> Hook.get logger ()
         | _ -> ());
        match e with
-       | Sys.Break ->
-       Feedback.msg_info Pp.(str "break received")
+       | Sys.Break -> ()
+       (* Feedback.msg_info Pp.(str "break received") *)
        | CErrors.Timeout -> ()
        | Logic_monad.TacticFailure _ -> ()
        | Logic_monad.Tac_Timeout -> ()
