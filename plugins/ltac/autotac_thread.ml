@@ -39,7 +39,7 @@ let terminate_threads () =
       (try
          Unix.kill (Unix.getpid ()) Sys.sigint
        with _ ->
-       Control.interrupt := true);
+         Control.interrupt := true);
       (try
          let e = Event.receive terminating_message in
          let t = Event.sync e in
