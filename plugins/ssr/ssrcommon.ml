@@ -1303,17 +1303,20 @@ let tacSIGMA = Goal.enter_one ~__LOC__ begin fun g ->
   tclUNIT (Tacmach.re_sig k sigma)
 end
 
+let pf_apply f = Proofview.Goal.enter_one ~__LOC__ begin fun gl ->
+    f (Proofview.Goal.env gl) (Proofview.Goal.sigma gl)
+  end
+
 let tclINTERP_AST_CLOSURE_TERM_AS_CONSTR c =
-  tclINDEPENDENTL begin tacSIGMA >>= fun gl ->
-  let old_ssrterm = mkRHole, Some c.Ssrast.body in
-  let ist =
-    option_assert_get c.Ssrast.interp_env
-      Pp.(str "tclINTERP_AST_CLOSURE_TERM_AS_CONSTR: term with no ist") in
-  let sigma, t =
-    interp_wit Stdarg.wit_constr ist gl old_ssrterm in
-  Unsafe.tclEVARS sigma <*>
-  tclUNIT t
-end
+  tclINDEPENDENTL @@ pf_apply begin fun env sigma ->
+    let old_ssrterm = mkRHole, Some c.Ssrast.body in
+    let ist =
+      option_assert_get c.Ssrast.interp_env
+        Pp.(str "tclINTERP_AST_CLOSURE_TERM_AS_CONSTR: term with no ist") in
+    let sigma, t = Tacinterp.interp_constr_gen Pretyping.WithoutTypeConstraint ist env sigma old_ssrterm in
+    Unsafe.tclEVARS sigma <*>
+    tclUNIT t
+  end
 
 let tacREDUCE_TO_QUANTIFIED_IND ty =
   tacSIGMA >>= fun gl ->
