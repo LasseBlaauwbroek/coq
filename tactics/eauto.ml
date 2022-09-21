@@ -411,6 +411,8 @@ let eauto_with_bases ?(debug=Off) np lems db_list =
   Hints.wrap_hint_warning (Proofview.V82.tactic (tclTRY (e_search_auto debug np lems db_list)))
 
 let eauto ?(debug=Off) np lems dbnames =
+  Proofview.V82.wrap_exceptions @@ fun () ->
+  Proofview.V82.tactic @@
   let db_list = make_db_list dbnames in
   tclTRY (e_search_auto debug np lems db_list)
 
@@ -420,7 +422,7 @@ let full_eauto ?(debug=Off) n lems gl =
 
 let gen_eauto ?(debug=Off) np lems = function
   | None -> Hints.wrap_hint_warning (Proofview.V82.tactic (full_eauto ~debug np lems))
-  | Some l -> Hints.wrap_hint_warning (Proofview.V82.tactic (eauto ~debug np lems l))
+  | Some l -> Hints.wrap_hint_warning (eauto ~debug np lems l)
 
 let make_depth = function
   | None -> !default_search_depth
