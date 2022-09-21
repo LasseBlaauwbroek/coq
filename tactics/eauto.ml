@@ -363,6 +363,7 @@ let eauto_with_bases ?(debug=Off) np lems db_list =
   Hints.wrap_hint_warning (e_search_auto debug np lems db_list)
 
 let eauto ?(debug=Off) np lems dbnames =
+  Proofview.V82.wrap_exceptions @@ fun () ->
   let db_list = make_db_list dbnames in
   e_search_auto debug np lems db_list
 
