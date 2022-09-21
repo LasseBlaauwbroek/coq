@@ -139,8 +139,9 @@ let newssrcongrtac arg ist =
     match try Some (pf_unify_HO gl_c (pf_concl gl) c)
           with exn when CErrors.noncritical exn -> None with
     | Some gl_c ->
-        Tacticals.tclTHEN (convert_concl ~check:true (fs gl_c c))
-          (t_ok (proj gl_c))
+      Proofview.Unsafe.tclEVARS Evd.(gl_c.sigma) <*>
+      Tacticals.tclTHEN (convert_concl ~check:true (fs gl_c c))
+        (t_ok (proj gl_c))
     | None -> t_fail ()
     end
   in
