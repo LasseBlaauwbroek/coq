@@ -162,3 +162,5 @@ val ltop : tolerability
 
 val make_constr_printer : (env -> Evd.evar_map -> tolerability -> 'a -> Pp.t) ->
   'a Genprint.top_printer
+
+val ssr_loaded_hook : (unit -> bool) -> unit
