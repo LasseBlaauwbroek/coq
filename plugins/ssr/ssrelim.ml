@@ -392,13 +392,21 @@ let ssrelim ?(is_case=false) deps what ?elim eqid elim_intro_tac =
           let erefl = fire_subst gl erefl in
           let erefl_ty = Retyping.get_type_of (pf_env gl) (project gl) erefl in
           let eq_ty = Retyping.get_type_of (pf_env gl) (project gl) erefl_ty in
+          let evds = Evar.Map.bind (Evd.find gl.Evd.sigma) @@
+            Evd.evars_of_term gl.Evd.sigma new_concl in
           let gen_eq_tac =
             let open Proofview.Notations in
             Proofview.Goal.enter begin fun s ->
             let sigma = Proofview.Goal.sigma s in
             let open Evd in
+            let sigma, shelve = Evar.Map.fold (fun e info (sigma, shelve) ->
+                if not @@ Evd.mem sigma e then
+                  Evd.add sigma e info, e::shelve else
+                  (sigma, shelve))
+                evds (sigma, []) in
             let sigma = merge_universe_context sigma (evar_universe_context (project gl)) in
             Proofview.Unsafe.tclEVARS sigma <*>
+            Proofview.shelve_goals @@ shelve <*>
             Tactics.apply_type ~typecheck:true new_concl [erefl]
             end
           in
