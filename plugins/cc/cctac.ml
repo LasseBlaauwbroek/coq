@@ -139,11 +139,11 @@ let patterns_of_constr env sigma nrels term=
           let valid1 =
             if not (Int.equal (Int.Set.cardinal rels1) nrels) then Creates_variables
             else if non_trivial patt1 then Normal
-            else Trivial (EConstr.to_constr sigma args.(0))
+            else Trivial (EConstr.to_constr ~abort_on_undefined_evars:false sigma args.(0))
           and valid2 =
             if not (Int.equal (Int.Set.cardinal rels2) nrels) then Creates_variables
             else if non_trivial patt2 then Normal
-            else Trivial (EConstr.to_constr sigma args.(0)) in
+            else Trivial (EConstr.to_constr ~abort_on_undefined_evars:false sigma args.(0)) in
             if valid1 != Creates_variables
               || valid2 != Creates_variables  then
               nrels,valid1,patt1,valid2,patt2
