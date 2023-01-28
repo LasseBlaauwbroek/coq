@@ -1015,6 +1015,13 @@ let append_end_library_hook f =
 
 let end_library ?except ~output_native_objects dir =
   !end_library_hook();
+  print_endline "starting Gc";
+  Gc.print_stat stderr;
+  Gc.minor();
+  Gc.major();
+  Gc.full_major();
+  Gc.print_stat stderr;
+  print_endline "Gc finished";
   let oname = Lib.end_compilation_checks dir in
   let mp,cenv,ast = Global.export ?except ~output_native_objects dir in
   let prefix, lib_stack = Lib.end_compilation oname in
