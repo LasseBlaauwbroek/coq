@@ -305,16 +305,10 @@ let subst_con0 sub cst =
   let mpu,mpc,resolve,user = subst_dual_mp sub mpu mpc in
   let knu = KerName.make mpu l in
   let knc = if mpu == mpc then knu else KerName.make mpc l in
-  match search_delta_inline resolve knu knc with
-    | Some t ->
-      (* In case of inlining, discard the canonical part (cf #2608) *)
-      Constant.make1 knu, Some t
-    | None ->
-      let knc' =
-        progress (kn_of_delta resolve) (if user then knu else knc) ~orelse:knc
-      in
-      let cst' = Constant.make knu knc' in
-      cst', None
+  let knc' =
+    progress (kn_of_delta resolve) (if user then knu else knc) ~orelse:knc in
+  let cst' = Constant.make knu knc' in
+  cst', search_delta_inline resolve knu knc
 
 let subst_con sub cst =
   try subst_con0 sub cst
