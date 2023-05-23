@@ -86,7 +86,7 @@ let interp_congrarg_at ist gl n rf ty m =
       let rt = mkRApp congrn (args1 @  mkRApp rf (mkRHoles i) :: args2) in
       ppdebug(lazy Pp.(str"rt=" ++ Printer.pr_glob_constr_env (pf_env gl) rt));
       Some (interp_refine ist gl rt)
-    with _ -> loop (i + 1) in
+    with e when CErrors.noncritical e -> loop (i + 1) in
   loop 0
 
 let pattern_id = mk_internal_id "pattern value"
@@ -294,7 +294,7 @@ let unfoldintac occ rdx t (kt,_) =
           in EConstr.Unsafe.to_constr @@ aux (EConstr.of_constr c)
       else
         try EConstr.Unsafe.to_constr @@ body env t (fs (unify_HO env sigma (EConstr.of_constr c) t) t)
-        with _ -> errorstrm Pp.(str "The term " ++
+        with e when CErrors.noncritical e -> errorstrm Pp.(str "The term " ++
           pr_constr_env env sigma c ++spc()++ str "does not unify with " ++ pr_econstr_pat env sigma t)),
     fake_pmatcher_end in
   let concl =
@@ -324,8 +324,9 @@ let foldtac occ rdx ft =
        try
          let sigma = unify_HO env sigma (EConstr.of_constr c) (EConstr.of_constr t) in
          EConstr.to_constr ~abort_on_undefined_evars:false sigma (EConstr.of_constr t)
-    with _ -> errorstrm Pp.(str "fold pattern " ++ pr_constr_pat env sigma t ++ spc ()
-      ++ str "does not match redex " ++ pr_constr_pat env sigma c)),
+       with e when CErrors.noncritical e ->
+         errorstrm Pp.(str "fold pattern " ++ pr_constr_pat env sigma t ++ spc ()
+                       ++ str "does not match redex " ++ pr_constr_pat env sigma c)),
     fake_pmatcher_end in
   let concl0 = EConstr.Unsafe.to_constr concl0 in
   let concl = eval_pattern env0 sigma0 concl0 rdx occ fold in
@@ -455,7 +456,7 @@ let rwcltac ?under ?map_redex cl rdx dir sr =
     else
       let dc, r2 = EConstr.decompose_lam_n_assum sigma0 n r' in
       let r3, _, r3t  =
-        try EConstr.destCast sigma0 r2 with _ ->
+        try EConstr.destCast sigma0 r2 with e when CErrors.noncritical e ->
         errorstrm Pp.(str "no cast from " ++ pr_econstr_pat env sigma0 (snd sr)
                     ++ str " to " ++ pr_econstr_env env sigma0 r2) in
       let cl' = EConstr.mkNamedProd (make_annot rule_id Sorts.Relevant) (EConstr.it_mkProd_or_LetIn r3t dc) (EConstr.Vars.lift 1 cl) in
@@ -497,7 +498,7 @@ let lz_setoid_relation =
     let srel =
        try Some (UnivGen.constr_of_monomorphic_global @@
                  Coqlib.find_reference "Class_setoid" ("Coq"::sdir) "RewriteRelation" [@ocaml.warning "-3"])
-       with _ -> None in
+       with e when CErrors.noncritical e -> None in
     last_srel := Some (env, srel); srel
 
 let ssr_is_setoid env =
@@ -607,7 +608,7 @@ let rwrxtac ?under ?map_redex occ rdx_pat dir rule =
           let ise = unify_HO env (Evd.create_evar_defs r_sigma) lhs rdx in
           if not (rw_progress rhs rdx ise) then raise NoMatch else
           d, (ise, Evd.evar_universe_context ise, Reductionops.nf_evar ise r)
-        with _ -> rwtac rs in
+        with e when CErrors.noncritical e -> rwtac rs in
      rwtac rules in
   let env0 = env in
   let concl0 = Proofview.Goal.concl gl in
@@ -675,10 +676,10 @@ let rwargtac ?under ?map_redex ist ((dir, mult), (((oclr, occ), grx), (kind, gt)
   let fail = ref false in
   let interp_rpattern env sigma gc =
     try interp_rpattern env sigma gc
-    with _ when snd mult = May -> fail := true; sigma, T mkProp in
+    with e when CErrors.noncritical e && snd mult = May -> fail := true; sigma, T mkProp in
   let interp env sigma gc =
     try interp_term env sigma ist gc
-    with _ when snd mult = May -> fail := true; (sigma, EConstr.mkProp) in
+    with e when CErrors.noncritical e && snd mult = May -> fail := true; (sigma, EConstr.mkProp) in
   let rwtac =
     Proofview.Goal.enter begin fun gl ->
     let env = Proofview.Goal.env gl in

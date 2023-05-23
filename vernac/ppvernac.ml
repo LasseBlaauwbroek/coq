@@ -1337,4 +1337,4 @@ let pr_vernac ({v = {control; attrs; expr}} as v) =
        pr_vernac_attributes attrs ++
        pr_vernac_expr expr ++
        sep_end expr)
-  with e -> CErrors.print e
+  with e when CErrors.noncritical e -> CErrors.print e

@@ -64,9 +64,9 @@ let parse_response s =
   | [ "TOKENS"; n ] -> Tokens (positive_int_of_string n)
   | [ "NOLUCK" ] -> Noluck
   | [ "PONG"; n; m; p ] ->
-      let n = try int_of_string n with _ -> raise ParseError in
-      let m = try int_of_string m with _ -> raise ParseError in
-      let p = try int_of_string p with _ -> raise ParseError in
+      let n = try int_of_string n with e when CErrors.noncritical e -> raise ParseError in
+      let m = try int_of_string m with e when CErrors.noncritical e -> raise ParseError in
+      let p = try int_of_string p with e when CErrors.noncritical e -> raise ParseError in
       Pong (n,m,p)
   | _ -> raise ParseError
 

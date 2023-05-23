@@ -277,7 +277,7 @@ let check_conv_record env sigma (t1,sk1) (t2,sk2) =
       let ty = Retyping.get_type_of ~lax:true env sigma c in
       let (i,u), ind_args =
         try Inductiveops.find_mrectype env sigma ty
-        with _ -> raise Not_found
+        with e when CErrors.noncritical e -> raise Not_found
       in Stack.append_app_list ind_args Stack.empty, c, sk1
     | None ->
       match Stack.strip_n_app nparams sk1 with
