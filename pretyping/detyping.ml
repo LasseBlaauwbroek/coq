@@ -807,7 +807,7 @@ and detype_r d flags avoid env sigma t =
       in
       if flags.flg_lax || !Flags.in_debugger || !Flags.in_toplevel then
         try noparams ()
-        with _ ->
+        with e when CErrors.noncritical e ->
             (* lax mode, used by debug printers only *)
           GApp (DAst.make @@ GRef (GlobRef.ConstRef (Projection.constant p), None),
                 [detype d flags avoid env sigma c])

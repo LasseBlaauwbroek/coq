@@ -155,7 +155,7 @@ module PHashtable (Key : HashedType) : PHashtable with type key = Key.t = struct
         let () = seek_in inch data.pos in
         match Marshal.from_channel inch with
         | (k, v) -> (hash, k, v) :: accu
-        | exception e -> accu
+        | exception End_of_file | exception Failure _ -> accu
       in
       (* Try to salvage what we can *)
       let data = do_under_lock Read finch (fun () -> Table.fold fold htbl []) in
@@ -216,7 +216,7 @@ module PHashtable (Key : HashedType) : PHashtable with type key = Key.t = struct
             let () = data.obj <- Some (k, v) in
             Some v
           else None
-        | exception _ -> None
+        | exception End_of_file | exception Failure _ -> None
       in
       let lookup () = CList.find_map find lpos in
       let res = do_under_lock Read (descr_of_out_channel outch) lookup in
@@ -224,7 +224,7 @@ module PHashtable (Key : HashedType) : PHashtable with type key = Key.t = struct
       res
 
   let memo cache f =
-    let tbl = lazy (try Some (open_in cache) with _ -> None) in
+    let tbl = lazy (try Some (open_in cache) with e when CErrors.noncritical e -> None) in
     fun x ->
       match Lazy.force tbl with
       | None -> f x
@@ -235,7 +235,7 @@ module PHashtable (Key : HashedType) : PHashtable with type key = Key.t = struct
           add tbl x res; res )
 
   let memo_cond cache cond f =
-    let tbl = lazy (try Some (open_in cache) with _ -> None) in
+    let tbl = lazy (try Some (open_in cache) with e when CErrors.noncritical e -> None) in
     fun x ->
       match Lazy.force tbl with
       | None -> f x
