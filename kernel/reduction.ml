@@ -340,7 +340,8 @@ let skip_pattern infos n c1 c2 =
 
 let is_irrelevant infos lft c =
   let env = info_env infos.cnv_inf in
-  try Relevanceops.relevance_of_fterm env (info_relevances infos.cnv_inf) lft c == Sorts.Irrelevant with _ -> false
+  try Relevanceops.relevance_of_fterm env (info_relevances infos.cnv_inf) lft c == Sorts.Irrelevant
+  with e when CErrors.noncritical e -> false
 
 let identity_of_ctx (ctx:Constr.rel_context) =
   Context.Rel.to_extended_vect mkRel 0 ctx

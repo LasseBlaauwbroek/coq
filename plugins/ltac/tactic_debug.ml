@@ -108,13 +108,13 @@ let db_initialize =
 
 let int_of_string s =
   try Proofview.NonLogical.return (int_of_string s)
-  with e ->
+  with e when CErrors.noncritical e ->
     let e = Exninfo.capture e in
     Proofview.NonLogical.raise e
 
 let string_get s i =
   try Proofview.NonLogical.return (String.get s i)
-  with e ->
+  with e when CErrors.noncritical e ->
     let e = Exninfo.capture e in
     Proofview.NonLogical.raise e
 

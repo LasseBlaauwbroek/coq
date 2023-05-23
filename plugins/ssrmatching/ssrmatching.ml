@@ -210,7 +210,7 @@ exception NoProgress
 let unif_EQ env sigma p c =
   let env = Environ.set_universes (Evd.universes sigma) env in
   let evars = existential_opt_value0 sigma in
-  try let _ = Reduction.conv env p ~evars c in true with _ -> false
+  try let _ = Reduction.conv env p ~evars c in true with e when CErrors.noncritical e -> false
 
 let unif_EQ_args env sigma pa a =
   let n = Array.length pa in
@@ -263,11 +263,13 @@ let nf_open_term sigma0 ise c =
   let s = ise and s' = ref sigma0 in
   let rec nf c' = match kind c' with
   | Evar ex ->
-    begin try nf (existential_value0 s ex) with _ ->
-    let k, a = ex in let a' = List.map nf a in
-    if not (Evd.mem !s' k) then
-      s' := Evd.add !s' k (Evarutil.nf_evar_info s (Evd.find s k));
-    mkEvar (k, a')
+    begin try
+        nf (existential_value0 s ex)
+      with e when CErrors.noncritical e ->
+        let k, a = ex in let a' = List.map nf a in
+        if not (Evd.mem !s' k) then
+          s' := Evd.add !s' k (Evarutil.nf_evar_info s (Evd.find s k));
+        mkEvar (k, a')
     end
   | _ -> map nf c' in
   let copy_def k evi () =
@@ -360,7 +362,8 @@ type tpattern = {
 let all_ok _ _ = true
 
 let proj_nparams c =
-  try 1 + Recordops.find_projection_nparams (GlobRef.ConstRef c) with _ -> 0
+  try 1 + Recordops.find_projection_nparams (GlobRef.ConstRef c)
+  with e when CErrors.noncritical e -> 0
 
 let isRigid c = match kind c with
   | Prod _ | Sort _ | Lambda _ | Case _ | Fix _ | CoFix _ -> true
@@ -487,7 +490,7 @@ let splay_app ise =
   | App (f, a') -> loop f (Array.append a' a)
   | Cast (c', _, _) -> loop c' a
   | Evar ex ->
-    (try loop (existential_value0 ise ex) a with _ -> c, a)
+    (try loop (existential_value0 ise ex) a with e when CErrors.noncritical e -> c, a)
   | _ -> c, a in
   fun c -> match kind c with
   | App (f, a) -> loop f a
@@ -866,13 +869,13 @@ let glob_cpattern gs p =
      if k = 'x' then glob_ssrterm gs ('(', (v, Some t), None) else
      match t.CAst.v with
      | CNotation(_,(InConstrEntry,"( _ in _ )"), ([t1; t2], [], [], [])) ->
-         (try match glob t1, glob t2 with
-         | (r1, None), (r2, None) -> encode k "In" [r1;r2]
-         | (r1, Some _), (r2, Some _) when isCVar t1 ->
-             encode k "In" [r1; r2; bind_in t1 t2]
-         | (r1, Some _), (r2, Some _) -> encode k "In" [r1; r2]
-         | _ -> CErrors.anomaly (str"where are we?.")
-         with _ when isCVar t1 -> encode k "In" [bind_in t1 t2])
+       (try match glob t1, glob t2 with
+          | (r1, None), (r2, None) -> encode k "In" [r1;r2]
+          | (r1, Some _), (r2, Some _) when isCVar t1 ->
+            encode k "In" [r1; r2; bind_in t1 t2]
+          | (r1, Some _), (r2, Some _) -> encode k "In" [r1; r2]
+          | _ -> CErrors.anomaly (str"where are we?.")
+        with e when CErrors.noncritical e && isCVar t1 -> encode k "In" [bind_in t1 t2])
      | CNotation(_,(InConstrEntry,"( _ in _ in _ )"), ([t1; t2; t3], [], [], [])) ->
          check_var t2; encode k "In" [fst (glob t1); bind_in t2 t3]
      | CNotation(_,(InConstrEntry,"( _ as _ )"), ([t1; t2], [], [], [])) ->
@@ -1241,13 +1244,13 @@ let fill_occ_term env sigma0 cl occ (sigma, t) =
     if sigma' != sigma0 then CErrors.user_err Pp.(str "matching impacts evars")
     else cl, t'
   with NoMatch -> try
-    let sigma', uc, t' =
-      unif_end env sigma0 (create_evar_defs sigma) t (fun _ -> true) in
-    if sigma' != sigma0 then raise NoMatch
-    else cl, t'
-  with _ ->
-    errorstrm (str "partial term " ++ pr_econstr_pat env sigma t
-            ++ str " does not match any subterm of the goal")
+      let sigma', uc, t' =
+        unif_end env sigma0 (create_evar_defs sigma) t (fun _ -> true) in
+      if sigma' != sigma0 then raise NoMatch
+      else cl, t'
+    with e when CErrors.noncritical e ->
+      errorstrm (str "partial term " ++ pr_econstr_pat env sigma t
+                 ++ str " does not match any subterm of the goal")
 
 let pf_fill_occ_term gl occ t =
   let sigma0 = project gl and env = pf_env gl and concl = pf_concl gl in

@@ -151,7 +151,7 @@ module PHashtable (Key : HashedType) : PHashtable with type key = Key.t = struct
       res
 
   let memo cache f =
-    let tbl = lazy (try Some (open_in cache) with _ -> None) in
+    let tbl = lazy (try Some (open_in cache) with e when CErrors.noncritical e -> None) in
     fun x ->
       match Lazy.force tbl with
       | None -> f x
@@ -162,7 +162,7 @@ module PHashtable (Key : HashedType) : PHashtable with type key = Key.t = struct
           add tbl x res; res )
 
   let memo_cond cache cond f =
-    let tbl = lazy (try Some (open_in cache) with _ -> None) in
+    let tbl = lazy (try Some (open_in cache) with e when CErrors.noncritical e -> None) in
     fun x ->
       match Lazy.force tbl with
       | None -> f x

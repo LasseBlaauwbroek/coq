@@ -1785,7 +1785,8 @@ let print_about_hyp_globs ~pstate ?loc ref_or_by_not udecl glopt =
       let open Constrexpr in
       match glnumopt, ref_or_by_not.v with
       | None,AN qid when qualid_is_ident qid -> (* goal number not given, catch any failure *)
-         (try get_nth_goal ~pstate 1, qualid_basename qid with _ -> raise NoHyp)
+         (try get_nth_goal ~pstate 1, qualid_basename qid
+          with e when CErrors.noncritical e -> raise NoHyp)
       | Some n,AN qid when qualid_is_ident qid ->  (* goal number given, catch if wong *)
          (try get_nth_goal ~pstate n, qualid_basename qid
           with
@@ -1877,7 +1878,7 @@ let vernac_search ~pstate ~atts s gopt r =
     match gopt with | None ->
       (* 1st goal by default if it exists, otherwise no goal at all *)
       (try get_goal_or_global_context ~pstate 1
-       with _ -> let env = Global.env () in (Evd.from_env env, env))
+       with e when CErrors.noncritical e -> let env = Global.env () in (Evd.from_env env, env))
     (* if goal selector is given and wrong, then let exceptions be raised. *)
     | Some g -> get_goal_or_global_context ~pstate g in
   interp_search env sigma s r

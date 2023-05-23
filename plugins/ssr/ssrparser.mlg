@@ -389,7 +389,7 @@ let interp_index ist gl idx =
           end
         | None -> raise Not_found
         end end
-    with _ -> CErrors.user_err ?loc:id.CAst.loc (str"Index not a number") in
+    with e when CErrors.noncritical e -> CErrors.user_err ?loc:id.CAst.loc (str"Index not a number") in
     ArgArg (check_index ?loc:id.CAst.loc i)
 
 open Pltac
@@ -680,7 +680,8 @@ let interp_intro_pattern = interp_wit wit_intro_pattern
 
 let interp_introid ist gl id =
  try IntroNaming (IntroIdentifier (hyp_id (snd (interp_hyp ist gl (SsrHyp (Loc.tag id))))))
- with _ -> (snd (interp_intro_pattern ist gl (CAst.make @@ IntroNaming (IntroIdentifier id)))).CAst.v
+ with e when CErrors.noncritical e ->
+   (snd (interp_intro_pattern ist gl (CAst.make @@ IntroNaming (IntroIdentifier id)))).CAst.v
 
 let get_intro_id = function
   | IntroNaming (IntroIdentifier id) -> id
