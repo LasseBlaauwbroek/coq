@@ -163,7 +163,7 @@ let convert_gen pb x y =
     | None ->
       let info = Exninfo.reify () in
       Tacticals.New.tclFAIL ~info 0 (str "Not convertible")
-    | exception e ->
+    | exception e when CErrors.noncritical e || CErrors.is_anomaly e ->
       let _, info = Exninfo.capture e in
       (* FIXME: Sometimes an anomaly is raised from conversion *)
       Tacticals.New.tclFAIL ~info 0 (str "Not convertible")

@@ -201,7 +201,7 @@ let get_constant_body kn =
   | OpaqueDef o ->
     match Opaqueproof.force_proof access otab o with
     | c, _ -> Some c
-    | exception _ -> None (* missing delayed body, e.g. in vok mode *)
+    | exception e when CErrors.noncritical e -> None (* missing delayed body, e.g. in vok mode *)
 
 let rec traverse current ctx accu t =
   let open GlobRef in
