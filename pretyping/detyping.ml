@@ -780,7 +780,7 @@ and detype_r d flags avoid env sigma t =
       in
       if flags.flg_lax || !Flags.in_debugger || !Flags.in_toplevel then
         try noparams ()
-        with _ ->
+        with e when CErrors.noncritical e ->
             (* lax mode, used by debug printers only *)
           GApp (DAst.make @@ GRef (GlobRef.ConstRef (Projection.constant p), None),
                 [detype d flags avoid env sigma c])
@@ -902,7 +902,9 @@ and detype_binder d flags bk avoid env sigma decl c =
   | BLetIn ->
       let c = detype d { flags with flg_isgoal = false } avoid env sigma (Option.get body) in
       (* Heuristic: we display the type if in Prop *)
-      let s = try Retyping.get_sort_family_of (snd env) sigma ty with _ when !Flags.in_debugger || !Flags.in_toplevel -> InType (* Can fail because of sigma missing in debugger *) in
+      let s = try Retyping.get_sort_family_of (snd env) sigma ty
+        with e when CErrors.noncritical e && !Flags.in_debugger || !Flags.in_toplevel ->
+          InType (* Can fail because of sigma missing in debugger *) in
       let t = if s != InProp  && not !Flags.raw_print then None else Some (detype d { flags with flg_isgoal = false } avoid env sigma ty) in
       GLetIn (na', c, t, r)
 

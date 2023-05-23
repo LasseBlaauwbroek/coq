@@ -182,7 +182,7 @@ let convert_gen pb x y =
     match Tacmach.New.pf_apply (Reductionops.infer_conv ~pb) gl x y with
     | Some sigma -> Proofview.Unsafe.tclEVARS sigma
     | None -> Tacticals.New.tclFAIL 0 (str "Not convertible")
-    | exception _ ->
+    | exception e when CErrors.noncritical e || CErrors.is_anomaly e ->
       (* FIXME: Sometimes an anomaly is raised from conversion *)
       Tacticals.New.tclFAIL 0 (str "Not convertible")
 end

@@ -81,7 +81,7 @@ let interp_congrarg_at ist gl n rf ty m =
       let rt = mkRApp congrn (args1 @  mkRApp rf (mkRHoles i) :: args2) in
       ppdebug(lazy Pp.(str"rt=" ++ Printer.pr_glob_constr_env (pf_env gl) rt));
       Some (interp_refine ist gl rt)
-    with _ -> loop (i + 1) in
+    with e when CErrors.noncritical e -> loop (i + 1) in
   loop 0
 
 let pattern_id = mk_internal_id "pattern value"
@@ -281,7 +281,7 @@ let unfoldintac occ rdx t (kt,_) gl =
           in EConstr.Unsafe.to_constr @@ aux (EConstr.of_constr c)
       else
         try EConstr.Unsafe.to_constr @@ body env t (fs (unify_HO env sigma (EConstr.of_constr c) t) t)
-        with _ -> errorstrm Pp.(str "The term " ++
+        with e when CErrors.noncritical e -> errorstrm Pp.(str "The term " ++
           pr_constr_env env sigma c ++spc()++ str "does not unify with " ++ pr_econstr_pat env sigma t)),
     fake_pmatcher_end in
   let concl =
@@ -310,8 +310,9 @@ let foldtac occ rdx ft gl =
        try
          let sigma = unify_HO env sigma (EConstr.of_constr c) (EConstr.of_constr t) in
          EConstr.to_constr ~abort_on_undefined_evars:false sigma (EConstr.of_constr t)
-    with _ -> errorstrm Pp.(str "fold pattern " ++ pr_constr_pat env sigma t ++ spc ()
-      ++ str "does not match redex " ++ pr_constr_pat env sigma c)),
+       with e when CErrors.noncritical e ->
+         errorstrm Pp.(str "fold pattern " ++ pr_constr_pat env sigma t ++ spc ()
+                       ++ str "does not match redex " ++ pr_constr_pat env sigma c)),
     fake_pmatcher_end in
   let concl0 = EConstr.Unsafe.to_constr concl0 in
   let concl = eval_pattern env0 sigma0 concl0 rdx occ fold in
@@ -375,7 +376,7 @@ let pirrel_rewrite ?(under=false) ?(map_redex=id_map_redex) pred rdx rdx_ty new_
   ppdebug(lazy Pp.(str"pirrel_rewrite of type: " ++ pr_econstr_env env sigma proof_ty));
   try refine_with
     ~first_goes_last:(not !ssroldreworder || under) ~with_evars:under (sigma, proof) gl
-  with _ ->
+  with e when CErrors.noncritical e ->
     (* we generate a msg like: "Unable to find an instance for the variable" *)
     let hd_ty, miss = match EConstr.kind sigma c with
     | App (hd, args) ->
@@ -427,9 +428,9 @@ let rwcltac ?under ?map_redex cl rdx dir sr gl =
     else
       let dc, r2 = EConstr.decompose_lam_n_assum (project gl) n r' in
       let r3, _, r3t  =
-        try EConstr.destCast (project gl) r2 with _ ->
-        errorstrm Pp.(str "no cast from " ++ pr_econstr_pat (pf_env gl) (project gl) (snd sr)
-                    ++ str " to " ++ pr_econstr_env (pf_env gl) (project gl) r2) in
+        try EConstr.destCast (project gl) r2 with e when CErrors.noncritical e ->
+          errorstrm Pp.(str "no cast from " ++ pr_econstr_pat (pf_env gl) (project gl) (snd sr)
+                        ++ str " to " ++ pr_econstr_env (pf_env gl) (project gl) r2) in
       let cl' = EConstr.mkNamedProd (make_annot rule_id Sorts.Relevant) (EConstr.it_mkProd_or_LetIn r3t dc) (EConstr.Vars.lift 1 cl) in
       let cl'' = EConstr.mkNamedProd (make_annot pattern_id Sorts.Relevant) rdxt cl' in
       let itacs = [introid pattern_id; introid rule_id] in
@@ -465,7 +466,7 @@ let lz_setoid_relation =
     let srel =
        try Some (UnivGen.constr_of_monomorphic_global @@
                  Coqlib.find_reference "Class_setoid" ("Coq"::sdir) "RewriteRelation" [@ocaml.warning "-3"])
-       with _ -> None in
+       with e when CErrors.noncritical e -> None in
     last_srel := Some (env, srel); srel
 
 let ssr_is_setoid env =
@@ -574,7 +575,7 @@ let rwrxtac ?under ?map_redex occ rdx_pat dir rule gl =
           let ise = unify_HO env (Evd.create_evar_defs r_sigma) lhs rdx in
           if not (rw_progress rhs rdx ise) then raise NoMatch else
           d, (ise, Evd.evar_universe_context ise, Reductionops.nf_evar ise r)
-        with _ -> rwtac rs in
+        with e when CErrors.noncritical e -> rwtac rs in
      rwtac rules in
   let sigma0, env0, concl0 = project gl, pf_env gl, pf_concl gl in
   let find_R, conclude = match rdx_pat with
@@ -631,10 +632,10 @@ let rwargtac ?under ?map_redex ist ((dir, mult), (((oclr, occ), grx), (kind, gt)
   let fail = ref false in
   let interp_rpattern gl gc =
     try interp_rpattern gl gc
-    with _ when snd mult = May -> fail := true; project gl, T mkProp in
+    with e when CErrors.noncritical e && snd mult = May -> fail := true; project gl, T mkProp in
   let interp gc gl =
     try interp_term ist gl gc
-    with _ when snd mult = May -> fail := true; (project gl, EConstr.mkProp) in
+    with e when CErrors.noncritical e && snd mult = May -> fail := true; (project gl, EConstr.mkProp) in
   let rwtac gl =
     let rx = Option.map (interp_rpattern gl) grx in
     let gl = match rx with

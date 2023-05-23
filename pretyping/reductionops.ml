@@ -1848,16 +1848,18 @@ let meta_reducible_instance evd b =
           if not is_coerce then irec g else u
          with Not_found -> u)
     | Proj (p,c) when isMeta evd c || isCast evd c && isMeta evd (pi1 (destCast evd c)) (* What if two nested casts? *) ->
-      let m = try destMeta evd c with _ -> destMeta evd (pi1 (destCast evd c)) (* idem *) in
-          (match
-          try
-            let g, s = Metamap.find m metas in
-            let is_coerce = match s with CoerceToType -> true | _ -> false in
-            if isConstruct evd g || not is_coerce then Some g else None
-          with Not_found -> None
-          with
-            | Some g -> irec (mkProj (p,g))
-            | None -> mkProj (p,c))
+      let m =
+        try destMeta evd c
+        with e when CErrors.noncritical e -> destMeta evd (pi1 (destCast evd c)) (* idem *) in
+      (match
+         try
+           let g, s = Metamap.find m metas in
+           let is_coerce = match s with CoerceToType -> true | _ -> false in
+           if isConstruct evd g || not is_coerce then Some g else None
+         with Not_found -> None
+       with
+       | Some g -> irec (mkProj (p,g))
+       | None -> mkProj (p,c))
     | _ -> EConstr.map evd irec u
   in
   if Metaset.is_empty fm then (* nf_betaiota? *) b.rebus

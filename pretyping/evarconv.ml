@@ -285,7 +285,7 @@ let check_conv_record env sigma (t1,sk1) (t2,sk2) =
       let ty = Retyping.get_type_of ~lax:true env sigma c in
       let (i,u), ind_args =
         try Inductiveops.find_mrectype env sigma ty
-        with _ -> raise Not_found
+        with e when CErrors.noncritical e -> raise Not_found
       in Stack.append_app_list ind_args Stack.empty, c, sk1
     | None ->
       match Stack.strip_n_app nparams sk1 with
@@ -1478,7 +1478,7 @@ let second_order_matching flags env_rhs evd (evk,args) (test,argoccs) rhs =
                           List.exists (fun c -> isVarId evd id (EConstr.of_constr c)) l ->
                  instantiate_evar evar_unify flags evd ev vid
                | _ -> evd)
-           with e -> user_err (Pp.str "Cannot find an instance")
+           with e when CErrors.noncritical e -> user_err (Pp.str "Cannot find an instance")
          else
            ((if !debug_ho_unification then
                let evi = Evd.find evd evk in

@@ -192,7 +192,7 @@ let interp_glob ist glob = Goal.enter_one ~__LOC__ begin fun goal ->
     Ssrprinters.ppdebug (lazy
       Pp.(str"interp-out: " ++ Printer.pr_econstr_env env sigma term));
     tclUNIT (env,sigma,term)
-  with e ->
+  with e when CErrors.noncritical e ->
     Ssrprinters.ppdebug (lazy
     Pp.(str"interp-err: " ++ Printer.pr_glob_constr_env env glob));
      tclZERO e

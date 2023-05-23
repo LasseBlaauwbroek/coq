@@ -466,7 +466,7 @@ let epsilon_value (type s tr a) f (e : (s, tr, a) symbol) =
   let entry = Gram.entry_create "epsilon" in
   let warning msg = Feedback.msg_warning Pp.(str msg) in
   let () = G.safe_extend ~warning:(Some warning) entry None ext in
-  try Some (parse_string entry "") with _ -> None
+  try Some (parse_string entry "") with e when CErrors.noncritical e -> None
 
 (** Synchronized grammar extensions *)
 

@@ -108,11 +108,11 @@ let db_initialize =
 
 let int_of_string s =
   try Proofview.NonLogical.return (int_of_string s)
-  with e -> Proofview.NonLogical.raise e
+  with e when CErrors.noncritical e -> Proofview.NonLogical.raise e
 
 let string_get s i =
   try Proofview.NonLogical.return (String.get s i)
-  with e -> Proofview.NonLogical.raise e
+  with e when CErrors.noncritical e -> Proofview.NonLogical.raise e
 
 let run_invalid_arg () = Proofview.NonLogical.raise (Invalid_argument "run_com")
 

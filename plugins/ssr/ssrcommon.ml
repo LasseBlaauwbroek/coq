@@ -459,7 +459,7 @@ let is_id_constr sigma c = match EConstr.kind sigma c with
 
 let red_product_skip_id env sigma c = match EConstr.kind sigma c with
   | App(hd,args) when Array.length args = 1 && is_id_constr sigma hd -> args.(0)
-  | _ -> try Tacred.red_product env sigma c with _ -> c
+  | _ -> try Tacred.red_product env sigma c with e when CErrors.noncritical e -> c
 
 let ssrevaltac ist gtac = Tacinterp.tactic_of_value ist gtac
 
@@ -622,7 +622,8 @@ let pf_abs_evars_pirrel gl (sigma, c0) =
         let ng, sigma = call_on_evar !ssrautoprop_tac i sigma in
         if (ng <> []) then errorstrm (str "Should we tell the user?");
         List.filter (fun (j,_) -> j <> i) ev, evp, sigma
-      with _ -> ev, p::evp, sigma) (evlist, [], sigma) (List.rev evplist) in
+      with e when CErrors.noncritical e ->
+        ev, p::evp, sigma) (evlist, [], sigma) (List.rev evplist) in
   let c0 = nf_evar sigma c0 in
   let evlist =
     List.map (fun (x,(y,t,z)) -> x,(y,nf_evar sigma t,z)) evlist in
@@ -673,7 +674,7 @@ let nb_evar_deps = function
     let s = Id.to_string id in
     if not (is_tagged evar_tag s) then 0 else
     let m = String.length evar_tag in
-    (try int_of_string (String.sub s m (String.length s - 1 - m)) with _ -> 0)
+    (try int_of_string (String.sub s m (String.length s - 1 - m)) with e when CErrors.noncritical e -> 0)
   | _ -> 0
 
 let pf_type_id gl t = Id.of_string (Namegen.hdchar (pf_env gl) (project gl) t)
@@ -1321,7 +1322,7 @@ let tclINTERP_AST_CLOSURE_TERM_AS_CONSTR c =
 let tacREDUCE_TO_QUANTIFIED_IND ty =
   pf_apply begin fun env sigma ->
   try tclUNIT (Tacred.reduce_to_quantified_ind env sigma ty)
-  with e -> tclZERO e
+  with e when CErrors.noncritical e -> tclZERO e
   end
 
 let tacTYPEOF c = Goal.enter_one ~__LOC__ (fun g ->

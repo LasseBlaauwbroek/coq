@@ -1181,7 +1181,7 @@ let start_library dir senv =
 let export ?except ~output_native_objects senv dir =
   let senv =
     try join_safe_environment ?except senv
-    with e ->
+    with e when CErrors.noncritical e ->
       let e = CErrors.push e in
       CErrors.user_err ~hdr:"export" (CErrors.iprint e)
   in

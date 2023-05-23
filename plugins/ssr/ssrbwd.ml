@@ -59,7 +59,7 @@ let interp_nbargs ist gl rc =
     let si = sig_it gl in
     let gl = re_sig si sigma in
     6 + Ssrcommon.nbargs_open_constr gl t
-  with _ -> 5
+  with e when CErrors.noncritical e -> 5
 
 let interp_view_nbimps ist gl rc =
   try
@@ -68,7 +68,7 @@ let interp_view_nbimps ist gl rc =
     let gl = re_sig si sigma in
     let pl, c = splay_open_constr gl t in
     if Ssrcommon.isAppInd (pf_env gl) (project gl) c then List.length pl else (-(List.length pl))
-  with _ -> 0
+  with e when CErrors.noncritical e -> 0
 
 let interp_agens ist gl gagens =
   match List.fold_right (interp_agen ist gl) gagens ([], []) with
@@ -79,7 +79,7 @@ let interp_agens ist gl gagens =
          errorstrm Pp.(str "Cannot apply lemma " ++ pf_pr_glob_constr gl rlemma)
       else
         try interp_refine ist gl (mkRApp rlemma (mkRHoles i @ args))
-        with _ -> loop (i + 1) in
+        with e when CErrors.noncritical e -> loop (i + 1) in
     clr, loop 0
   | _ -> assert false
 
@@ -96,7 +96,7 @@ let apply_rconstr ?ist t gl =
   let rec loop i =
     if i > n then
       errorstrm Pp.(str"Cannot apply lemma "++pf_pr_glob_constr gl t)
-    else try pf_match gl (mkRlemma i) (OfType cl) with _ -> loop (i + 1) in
+    else try pf_match gl (mkRlemma i) (OfType cl) with e when CErrors.noncritical e -> loop (i + 1) in
   refine_with (loop 0) gl
 
 let mkRAppView ist gl rv gv =
@@ -111,8 +111,8 @@ let refine_interp_apply_view dbl ist gl gv =
     let i = if dbl = Ssrview.AdaptorDb.Equivalence then 2 else 1 in
     interp_refine ist gl (mkRApp hint (v :: mkRHoles i)) in
   let rec loop = function
-  | [] -> (try apply_rconstr ~ist rv gl with _ -> view_error "apply" gv)
-  | h :: hs -> (try refine_with (snd (interp_with h)) gl with _ -> loop hs) in
+  | [] -> (try apply_rconstr ~ist rv gl with e when CErrors.noncritical e -> view_error "apply" gv)
+  | h :: hs -> (try refine_with (snd (interp_with h)) gl with e when CErrors.noncritical e -> loop hs) in
   loop (pair dbl (Ssrview.AdaptorDb.get dbl) @
         if dbl = Ssrview.AdaptorDb.Equivalence
         then pair Ssrview.AdaptorDb.Backward (Ssrview.AdaptorDb.(get Backward))
