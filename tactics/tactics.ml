@@ -1466,14 +1466,14 @@ let clenv_refine_in ?err with_evars targetid replace sigma0 clenv tac =
 let last_arg sigma c = match EConstr.kind sigma c with
   | App (f,cl) ->
       Array.last cl
-  | _ -> anomaly (Pp.str "last_arg.")
+  | _ -> raise (Invalid_argument "last_arg.")
 
 let nth_arg sigma i c = match i with
 | None -> last_arg sigma c
 | Some i ->
   match EConstr.kind sigma c with
   | App (f,cl) -> cl.(i)
-  | _ -> anomaly (Pp.str "nth_arg.")
+  | _ -> raise (Invalid_argument "nth_arg.")
 
 let index_of_ind_arg sigma t =
   let rec aux i j t = match EConstr.kind sigma t with
@@ -1540,7 +1540,7 @@ let general_elim_clause with_evars flags where (c, ty) elim =
   let indmv =
     (match EConstr.kind sigma (nth_arg sigma i elimclause.templval.rebus) with
        | Meta mv -> mv
-       | _  -> error IllFormedEliminationType)
+       | _ | exception Invalid_argument _ -> error IllFormedEliminationType)
   in
   (* Assumes that the metas of [c] are part of [sigma] already *)
   let elimclause = Clenv.update_clenv_evd elimclause (meta_merge sigma elimclause.Clenv.evd) in
