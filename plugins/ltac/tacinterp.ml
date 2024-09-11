@@ -250,13 +250,13 @@ let append_trace trace v =
 
 (* Dynamically check that an argument is a tactic *)
 let coerce_to_tactic loc id v =
-  let fail () = user_err ?loc
+  let fail () = Tacticals.New.tclZEROMSG
     (str "Variable " ++ Id.print id ++ str " should be bound to a tactic.")
   in
   if has_type v (topwit wit_tacvalue) then
     let tacv = to_tacvalue v in
     match tacv with
-    | VFun _ -> v
+    | VFun _ -> Ftactic.return v
     | _ -> fail ()
   else fail ()
 
@@ -1219,7 +1219,7 @@ and interp_ltac_reference ?loc' mustbetac ist r : Val.t Ftactic.t =
       let open Ftactic in
       force_vrec ist v >>= begin fun v ->
       Ftactic.lift (propagate_trace ist loc id v) >>= fun v ->
-      if mustbetac then Ftactic.return (coerce_to_tactic loc id v) else Ftactic.return v
+      if mustbetac then coerce_to_tactic loc id v else Ftactic.return v
       end
   | ArgArg (loc,r) ->
       Proofview.tclProofInfo [@ocaml.warning "-3"] >>= fun (_name, poly) ->
